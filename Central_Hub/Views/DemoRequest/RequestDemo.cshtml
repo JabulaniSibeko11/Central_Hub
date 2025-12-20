@@ -1,0 +1,273 @@
+﻿@model Central_Hub.Models.DemoRequest
+@{
+    ViewData["Title"] = "Request a Demo";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request a Demo - Declarify</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="~/css/dashboard.css" rel="stylesheet" />
+    <link href="~/css/requestdemo.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="demo-modal">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <div class="modal-header-content">
+                <h1 class="modal-title">
+                    Experience Declarify<br/>
+                    <span class="text-accent">Request Your Demo</span>
+                </h1>
+                <p class="modal-subtitle">
+                    See how Declarify can streamline your Declaration of Interest compliance process. 
+                    Our team will guide you through the platform and answer all your questions.
+                </p>
+            </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+            <div class="feature-highlight">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <div class="feature-text">
+                    <strong>What to Expect</strong>
+                    <p>Our team will contact you within 24 hours to schedule your personalized demo and discuss how Declarify can meet your organization's specific needs.</p>
+                </div>
+            </div>
+
+            <form asp-action="RequestDemo" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert-card warning" style="margin-bottom: 2rem;"></div>
+
+                <!-- Organization Information -->
+                <div class="section-header">
+                    <div class="section-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    </div>
+                    <h3 class="section-title">Organization Information</h3>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="CompanyName" class="form-label">
+                            Company Name<span class="required">*</span>
+                        </label>
+                        <input asp-for="CompanyName" class="form-control" placeholder="e.g., City of Johannesburg" required />
+                        <span asp-validation-for="CompanyName" class="invalid-feedback"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="RegistrationNumber" class="form-label">
+                            Registration Number<span class="required">*</span>
+                        </label>
+                        <input asp-for="RegistrationNumber" class="form-control" placeholder="e.g., 2000/123456/08" required />
+                        <span asp-validation-for="RegistrationNumber" class="invalid-feedback"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="OrganizationType" class="form-label">
+                            Organization Type<span class="required">*</span>
+                        </label>
+                        <select asp-for="OrganizationType" class="form-control" asp-items="Html.GetEnumSelectList<Central_Hub.Models.CompanyType>()" required>
+                            <option value="">Select Organization Type</option>
+                        </select>
+                        <span asp-validation-for="OrganizationType" class="invalid-feedback"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="EstimatedEmployeeCount" class="form-label">
+                            Estimated Employee Count
+                        </label>
+                        <input asp-for="EstimatedEmployeeCount" type="number" class="form-control" placeholder="e.g., 500" min="1" />
+                        <span asp-validation-for="EstimatedEmployeeCount" class="invalid-feedback"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="OrganizationEmailDomain" class="form-label">
+                            Organization Email Domain<span class="required">*</span>
+                        </label>
+                        <input asp-for="OrganizationEmailDomain" class="form-control" placeholder="e.g., joburg.org.za" required />
+                        <span class="form-text">Enter your organization's email domain (without @@)</span>
+                        <span asp-validation-for="OrganizationEmailDomain" class="invalid-feedback"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Province" class="form-label">
+                            Province<span class="required">*</span>
+                        </label>
+                        <select asp-for="Province" class="form-control" required>
+                            <option value="">Select Province</option>
+                            <option value="Gauteng">Gauteng</option>
+                            <option value="Western Cape">Western Cape</option>
+                            <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                            <option value="Eastern Cape">Eastern Cape</option>
+                            <option value="Limpopo">Limpopo</option>
+                            <option value="Mpumalanga">Mpumalanga</option>
+                            <option value="North West">North West</option>
+                            <option value="Northern Cape">Northern Cape</option>
+                            <option value="Free State">Free State</option>
+                        </select>
+                        <span asp-validation-for="Province" class="invalid-feedback"></span>
+                    </div>
+                </div>
+
+                <!-- Contact Person -->
+                <div class="section-header">
+                    <div class="section-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <h3 class="section-title">Contact Person</h3>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="ContactPersonName" class="form-label">
+                            Full Name<span class="required">*</span>
+                        </label>
+                        <input asp-for="ContactPersonName" class="form-control" placeholder="e.g., John Smith" required />
+                        <span asp-validation-for="ContactPersonName" class="invalid-feedback"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="JobTitle" class="form-label">
+                            Job Title
+                        </label>
+                        <input asp-for="JobTitle" class="form-control" placeholder="e.g., Compliance Officer" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="Email" class="form-label">
+                            Email Address<span class="required">*</span>
+                        </label>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="your.email@domain.com" required />
+                        <span asp-validation-for="Email" class="invalid-feedback"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="PhoneNumber" class="form-label">
+                            Phone Number<span class="required">*</span>
+                        </label>
+                        <input asp-for="PhoneNumber" type="tel" class="form-control" placeholder="+27 XX XXX XXXX" required />
+                        <span asp-validation-for="PhoneNumber" class="invalid-feedback"></span>
+                    </div>
+                </div>
+
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label asp-for="Department" class="form-label">
+                            Department
+                        </label>
+                        <input asp-for="Department" class="form-control" placeholder="e.g., Human Resources" />
+                    </div>
+                </div>
+
+                <!-- Demo Preferences -->
+                <div class="section-header">
+                    <div class="section-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                    <h3 class="section-title">Demo Preferences (Optional)</h3>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="PreferredDemoDate" class="form-label">
+                            Preferred Demo Date
+                        </label>
+                        <input asp-for="PreferredDemoDate" type="date" class="form-control" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="PreferredTime" class="form-label">
+                            Preferred Time
+                        </label>
+                        <select asp-for="PreferredTime" class="form-control">
+                            <option value="">Select Time Slot</option>
+                            <option value="Morning (9:00 - 12:00)">Morning (9:00 - 12:00)</option>
+                            <option value="Afternoon (12:00 - 15:00)">Afternoon (12:00 - 15:00)</option>
+                            <option value="Late Afternoon (15:00 - 17:00)">Late Afternoon (15:00 - 17:00)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label asp-for="AdditionalInfo" class="form-label">
+                            Additional Information
+                        </label>
+                        <textarea asp-for="AdditionalInfo" class="form-control" rows="4" placeholder="Tell us about your specific needs, compliance challenges, or any questions you'd like addressed during the demo..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label asp-for="HearAboutUs" class="form-label">
+                            How Did You Hear About Us?
+                        </label>
+                        <select asp-for="HearAboutUs" class="form-control">
+                            <option value="">Select an Option</option>
+                            <option value="Google Search">Google Search</option>
+                            <option value="Colleague Referral">Colleague Referral</option>
+                            <option value="Social Media">Social Media</option>
+                            <option value="Industry Event">Industry Event</option>
+                            <option value="Government Portal">Government Portal</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- MOVE THE SUBMIT BUTTON INSIDE THE FORM, just before closing </form> -->
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                            <path d="M22 2L11 13"></path>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                        </svg>
+                        Submit Demo Request
+                    </button>
+                    <p class="footer-note">
+                        By submitting this form, you agree to be contacted by our team regarding your demo request.<br />
+                        We respect your privacy and will never share your information with third parties.
+                    </p>
+                </div>
+            </form>
+           
+        </div>
+
+        <!-- Modal Footer -->
+       
+    </div>
+
+    @section Scripts {
+        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+        <script>
+            // Add form ID for submit button
+            document.querySelector('form').id = 'demoForm';
+        </script>
+    }
+</body>
+</html>

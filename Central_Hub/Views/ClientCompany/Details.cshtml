@@ -1,0 +1,415 @@
+﻿@model Central_Hub.Models.ClientCompany
+@{
+    ViewData["Title"] = Model.CompanyName;
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@Model.CompanyName - Declarify Central Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="~/css/dashboard.css" rel="stylesheet" />
+    <link href="~/css/clientdetail.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Back Button -->
+        <div style="margin-bottom: 2rem;">
+            <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">← Back to Clients</a>
+        </div>
+
+        <!-- Company Header -->
+        <div class="detail-header">
+            @{
+                var statusClass = Model.LicenseStatus switch
+                {
+                    Central_Hub.Models.LicenseStatus.Active => "active",
+                    Central_Hub.Models.LicenseStatus.ExpiringSoon => "warning",
+                    Central_Hub.Models.LicenseStatus.Expired => "danger",
+                    Central_Hub.Models.LicenseStatus.Trial => "trial",
+                    _ => "trial"
+                };
+            }
+            <div class="status-banner @statusClass">
+                @if (Model.IsExpired)
+                {
+                    <span>⚠️ License Expired</span>
+                }
+                else if (Model.IsExpiringSoon)
+                {
+                    <span>⏰ Expires in @Model.DaysUntilExpiry days</span>
+                }
+                else
+                {
+                    <span>✓ @Model.LicenseStatus</span>
+                }
+            </div>
+
+            <div class="detail-header-content">
+                <h1 class="company-name">@Model.CompanyName</h1>
+
+                <div class="company-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Type:</span>
+                        <strong>@Model.CompanyType</strong>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Status:</span>
+                        @switch (Model.LicenseStatus)
+                        {
+                            case Central_Hub.Models.LicenseStatus.Active:
+                                <span class="badge badge-success">Active</span>
+                                break;
+                            case Central_Hub.Models.LicenseStatus.ExpiringSoon:
+                                <span class="badge badge-warning">Expiring Soon</span>
+                                break;
+                            case Central_Hub.Models.LicenseStatus.Expired:
+                                <span class="badge badge-danger">Expired</span>
+                                break;
+                            case Central_Hub.Models.LicenseStatus.Trial:
+                                <span class="badge badge-info">Trial</span>
+                                break;
+                        }
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Member Since:</span>
+                        <strong>@Model.CreatedDate.ToString("dd MMM yyyy")</strong>
+                    </div>
+                </div>
+
+                <div class="license-key-display">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <div>
+                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-bottom: 4px;">LICENSE KEY</div>
+                        <code>@Model.LicenseKey</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Showcase -->
+        <div class="stats-showcase">
+            <div class="showcase-card" style="--card-color: var(--color-info); --card-bg: rgba(59, 130, 246, 0.1);">
+                <div class="showcase-icon">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <div class="showcase-value">@Model.LicenseExpiryDate.ToString("dd MMM yyyy")</div>
+                <div class="showcase-label">License Expiry</div>
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--color-text-muted);">
+                    @Model.DaysUntilExpiry days remaining
+                </div>
+            </div>
+
+            <div class="showcase-card" style="--card-color: var(--color-accent); --card-bg: rgba(0, 194, 203, 0.1);">
+                <div class="showcase-icon">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+                <div class="showcase-value">@Model.CurrentCreditBalance.ToString("N0")</div>
+                <div class="showcase-label">Credits Available</div>
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--color-text-muted);">
+                    @Model.TotalCreditsPurchased.ToString("N0") purchased · @Model.TotalCreditsUsed.ToString("N0") used
+                </div>
+            </div>
+
+            <div class="showcase-card" style="--card-color: var(--color-success); --card-bg: rgba(16, 185, 129, 0.1);">
+                <div class="showcase-icon">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div class="showcase-value">@(Model.EstimatedEmployeeCount?.ToString("N0") ?? "N/A")</div>
+                <div class="showcase-label">Employees</div>
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--color-text-muted);">
+                    Estimated workforce
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="detail-grid">
+            <!-- Left Column -->
+            <div>
+                <!-- Company Details -->
+                <div class="info-card" style="margin-bottom: 2rem;">
+                    <div class="info-card-header">
+                        <div class="info-icon">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                        </div>
+                        <h3 class="info-title">Company Details</h3>
+                    </div>
+
+                    <div class="info-table">
+                        <div class="info-row">
+                            <span class="info-label">Registration Number</span>
+                            <span class="info-value">@Model.RegistrationNumber</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Email Domain</span>
+                            <span class="info-value">@@@Model.EmailDomain</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Province</span>
+                            <span class="info-value">@Model.Province</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">City</span>
+                            <span class="info-value">@(Model.City ?? "Not specified")</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Contact Number</span>
+                            <span class="info-value">@(Model.ContactNumber ?? "Not specified")</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Created Date</span>
+                            <span class="info-value">@Model.CreatedDate.ToString("dd MMM yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Administrator -->
+                @if (Model.Administrator != null)
+                {
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <div class="info-icon">
+                                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <h3 class="info-title">Primary Administrator</h3>
+                        </div>
+
+                        <div class="info-table">
+                            <div class="info-row">
+                                <span class="info-label">Name</span>
+                                <span class="info-value">@Model.Administrator.FullName</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Email</span>
+                                <span class="info-value">
+                                    <a href="mailto:@Model.Administrator.Email" style="color: var(--color-accent); text-decoration: none;">
+                                        @Model.Administrator.Email
+                                    </a>
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Phone</span>
+                                <span class="info-value">@Model.Administrator.PhoneNumber</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Job Title</span>
+                                <span class="info-value">@(Model.Administrator.JobTitle ?? "Not specified")</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Department</span>
+                                <span class="info-value">@(Model.Administrator.Department ?? "Not specified")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <!-- Add Credits -->
+                <div class="action-card" style="margin-bottom: 2rem;">
+                    <div class="action-card-header">
+                        <h3 class="action-card-title">💳 Add Credits</h3>
+                        <p class="action-card-subtitle">Purchase additional credits for this client</p>
+                    </div>
+
+                    <form asp-action="AddCredit" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="companyId" value="@Model.CompanyId" />
+
+                        <div class="form-group">
+                            <label class="form-label">Number of Credits</label>
+                            <input type="number" name="creditAmount" class="form-control" min="1" placeholder="e.g., 100" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Amount Paid (ZAR)</label>
+                            <input type="number" name="amountPaid" class="form-control" step="0.01" min="0" placeholder="e.g., 5000.00" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Notes (Optional)</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="e.g., Bulk purchase discount applied"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                            Add Credits
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Renew License -->
+                <div class="action-card">
+                    <div class="action-card-header">
+                        <h3 class="action-card-title">🔄 Renew License</h3>
+                        <p class="action-card-subtitle">
+                            Current expiry: <strong>@Model.LicenseExpiryDate.ToString("dd MMM yyyy")</strong><br />
+                            New expiry: <strong>@Model.LicenseExpiryDate.AddYears(1).ToString("dd MMM yyyy")</strong>
+                        </p>
+                    </div>
+
+                    <form asp-action="RenewLicense" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="companyId" value="@Model.CompanyId" />
+
+                        <div class="form-group">
+                            <label class="form-label">Amount Paid (ZAR)</label>
+                            <input type="number" name="amountPaid" class="form-control" step="0.01" min="0" placeholder="e.g., 12000.00" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Payment Reference</label>
+                            <input type="text" name="paymentReference" class="form-control" placeholder="e.g., EFT123456" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Notes (Optional)</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Additional information"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-success" style="width: 100%;">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                            Renew License
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction History -->
+        @if (Model.CreditTransactions?.Any() == true)
+        {
+            <div class="transaction-table">
+                <div class="table-header">
+                    <h3 class="table-title">Recent Credit Transactions</h3>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Credits</th>
+                                <th>Amount Paid</th>
+                                <th>Expiry Date</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var transaction in Model.CreditTransactions.OrderByDescending(t => t.TransactionDate).Take(10))
+                            {
+                                <tr>
+                                    <td style="white-space: nowrap; font-weight: 500;">@transaction.TransactionDate.ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        @switch (transaction.TransactionType)
+                                        {
+                                            case Central_Hub.Models.CreditTransactionType.Purchase:
+                                                <span class="badge badge-success">Purchase</span>
+                                                break;
+                                            case Central_Hub.Models.CreditTransactionType.Bonus:
+                                                <span class="badge badge-info">Bonus</span>
+                                                break;
+                                            default:
+                                                <span class="badge badge-info">@transaction.TransactionType</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong style="color: var(--color-accent); font-size: 1.1rem;">@transaction.CreditsAmount</strong>
+                                    </td>
+                                    <td style="white-space: nowrap; font-weight: 500;">R @(transaction.AmountPaid?.ToString("N2") ?? "-")</td>
+                                    <td style="white-space: nowrap;">@transaction.ExpiryDate.ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        <code style="font-size: 0.85rem; background: var(--color-bg-canvas); padding: 4px 8px; border-radius: 4px;">
+                                            @transaction.ReferenceNumber
+                                        </code>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        <!-- License Renewal History -->
+        @if (Model.LicenseRenewals?.Any() == true)
+        {
+            <div class="transaction-table">
+                <div class="table-header">
+                    <h3 class="table-title">License Renewal History</h3>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Renewal Date</th>
+                                <th>Previous Expiry</th>
+                                <th>New Expiry</th>
+                                <th>Amount Paid</th>
+                                <th>Payment Ref</th>
+                                <th>Processed By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var renewal in Model.LicenseRenewals.OrderByDescending(r => r.RenewalDate))
+                            {
+                                <tr>
+                                    <td style="white-space: nowrap; font-weight: 500;">@renewal.RenewalDate.ToString("dd MMM yyyy")</td>
+                                    <td style="white-space: nowrap;">@renewal.PreviousExpiryDate.ToString("dd MMM yyyy")</td>
+                                    <td style="white-space: nowrap;">
+                                        <strong style="color: var(--color-success);">@renewal.NewExpiryDate.ToString("dd MMM yyyy")</strong>
+                                    </td>
+                                    <td style="white-space: nowrap; font-weight: 600;">R @renewal.AmountPaid.ToString("N2")</td>
+                                    <td>
+                                        <code style="font-size: 0.85rem; background: var(--color-bg-canvas); padding: 4px 8px; border-radius: 4px;">
+                                            @renewal.PaymentReference
+                                        </code>
+                                    </td>
+                                    <td style="color: var(--color-text-muted);">@renewal.ProcessedBy</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</body>
+</html>

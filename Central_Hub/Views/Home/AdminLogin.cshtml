@@ -1,0 +1,85 @@
+﻿@model LoginViewModel
+@{
+    ViewData["Title"] = "Central Admin Login";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Declarify Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+ 
+    <link href="~/css/logincss.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="logo-section">
+                <div class="logo-icon">🔐</div>
+                <h2>Central Command</h2>
+                <p class="subtitle">Administrator Access Portal</p>
+            </div>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    <span>⚠️</span>
+                    <span>@Html.ValidationSummary(false, "", new { @class = "text-danger" })</span>
+                </div>
+            }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger">
+                    <span>⚠️</span>
+                    <span>@TempData["Error"]</span>
+                </div>
+            }
+
+            <form asp-action="AdminLogin" asp-controller="Home" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+                <div class="form-group">
+                    <label asp-for="Email">Email Address</label>
+                    <input asp-for="Email" type="email" placeholder="admin@declarify.co.za" autocomplete="username" required />
+                    <span asp-validation-for="Email" class="validation-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Password">Password</label>
+                    <input asp-for="Password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+                    <span asp-validation-for="Password" class="validation-error"></span>
+                </div>
+
+                <div class="remember-me">
+                    <input asp-for="RememberMe" type="checkbox" id="rememberMe" />
+                    <label for="rememberMe">Keep me signed in for 30 days</label>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <span>Access Dashboard</span>
+                    <span>→</span>
+                </button>
+
+                <div class="security-badge">
+                    <span>🔒</span>
+                    <span>Secured with enterprise-grade encryption</span>
+                </div>
+            </form>
+        </div>
+
+        <div class="footer-text">
+            <p>© 2025 Declarify Central Hub • <a href="#">Privacy Policy</a> • <a href="#">Support</a></p>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

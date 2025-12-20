@@ -1,0 +1,414 @@
+﻿@model Central_Hub.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Central Hub Dashboard";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Declarify Central Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="~/css/dashboard.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <h1>Welcome to Declarify Central Hub</h1>
+            <p>Real-time overview of your Declaration of Interest management system</p>
+            <div class="header-actions">
+               @*  <button asp-action="Create" asp-controller="ClientCompany"  class="btn btn-primary">+ Add New Client</button>
+ *@
+                <a href="@Url.Action("Create", "ClientCompany")" class="btn btn-primary">
+                    + Add New Client
+                </a>
+               @*  <button class="btn btn-secondary">View Requests</button> *@
+                <a href="@Url.Action("ManageDemoRequest", "DemoRequest")" class="btn btn-secondary">
+                    📋 Manage Requests
+                </a>
+            </div>
+        </div>
+
+        <!-- Key Metrics Row -->
+        <div class="stats-grid">
+            <!-- Total Clients -->
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <svg width="28" height="28" fill="none" stroke="white" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div class="stat-value">@Model.TotalClients</div>
+                <div class="stat-label">Total Clients</div>
+                <div class="stat-sublabel">
+                    <span style="color: var(--color-success); font-weight: 600;">@Model.ActiveClients Active</span> ·
+                    <span style="color: #3B82F6;">@Model.TrialClients Trial</span>
+                </div>
+            </div>
+
+            <!-- Credits in Circulation -->
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <svg width="28" height="28" fill="none" stroke="white" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+                <div class="stat-value">@Model.TotalCreditsInCirculation.ToString("N0")</div>
+                <div class="stat-label">Credits Available</div>
+                <div class="stat-sublabel">
+                    @Model.TotalCreditsPurchased.ToString("N0") purchased · @Model.TotalCreditsUsed.ToString("N0") used
+                </div>
+            </div>
+
+            <!-- Monthly Revenue -->
+            <div class="stat-card">
+                <div class="stat-icon warning">
+                    <svg width="28" height="28" fill="none" stroke="white" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+                <div class="stat-value">R @Model.MonthlyRevenue.ToString("N0")</div>
+                <div class="stat-label">Monthly Revenue</div>
+                <div class="stat-sublabel">
+                    Yearly: R @Model.YearlyRevenue.ToString("N0")
+                </div>
+            </div>
+
+            <!-- Requests -->
+            <div class="stat-card">
+                <div class="stat-icon info">
+                    <svg width="28" height="28" fill="none" stroke="white" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <div class="stat-value">@Model.TotalDemoRequests</div>
+                <div class="stat-label">Requests</div>
+                <div class="stat-sublabel">
+                    <span style="color: var(--color-warning); font-weight: 600;">@Model.PendingDemoRequests Pending</span> ·
+                    @Model.ConvertedDemos Converted
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Section -->
+        @if (Model.ExpiringLicenses?.Any() == true || Model.LowCreditClients?.Any() == true)
+        {
+            <div class="alerts-section">
+                @if (Model.ExpiringLicenses?.Any() == true)
+                {
+                    <div class="alert-card warning">
+                        <div class="alert-icon">⚠️</div>
+                        <div class="alert-content">
+                            <div class="alert-title">Expiring Licenses</div>
+                            <div class="alert-description">@Model.ExpiringLicenses.Count client(s) have licenses expiring within 30 days.</div>
+                            <a href="@Url.Action("Index", "ClientCompany")" class="btn btn-sm btn-primary">
+                                View Details →
+                            </a>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.LowCreditClients?.Any() == true)
+                {
+                    <div class="alert-card info">
+                        <div class="alert-icon">ℹ️</div>
+                        <div class="alert-content">
+                            <div class="alert-title">Low Credit Alert</div>
+                            <div class="alert-description">@Model.LowCreditClients.Count client(s) have less than 50 credits remaining.</div>
+                            <a href="@Url.Action("Index", "ClientCompany")" class="btn btn-sm btn-primary">
+                                View Details →
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Recent Clients -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Clients</h2>
+                    <a href="@Url.Action("Index", "ClientCompany")" class="card-action">View All</a>
+                </div>
+
+                @if (Model.RecentClients?.Any() == true)
+                {
+                    @foreach (var client in Model.RecentClients)
+                    {
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <div class="list-item-title">@client.CompanyName</div>
+                                <div class="list-item-subtitle">
+                                    @client.Administrator?.Email ·
+                                    @client.CreatedDate.ToString("dd MMM yyyy")
+                                </div>
+                            </div>
+                            <div class="list-item-actions">
+                                @switch (client.LicenseStatus)
+                                {
+                                    case Central_Hub.Models.LicenseStatus.Active:
+                                        <span class="badge badge-success">Active</span>
+                                        break;
+                                    case Central_Hub.Models.LicenseStatus.Trial:
+                                        <span class="badge badge-info">Trial</span>
+                                        break;
+                                    case Central_Hub.Models.LicenseStatus.ExpiringSoon:
+                                        <span class="badge badge-warning">Expiring Soon</span>
+                                        break;
+                                    case Central_Hub.Models.LicenseStatus.Expired:
+                                        <span class="badge badge-danger">Expired</span>
+                                        break;
+                                }
+                                <a href="@Url.Action("Details", "ClientCompany", new { id = client.CompanyId })"
+                                   class="btn btn-primary btn-sm">View</a>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p>No clients yet. Create your first client to get started!</p>
+                        <a href="@Url.Action("Create", "ClientCompany")" class="btn btn-primary btn-sm" style="margin-top: 16px;">
+                            + Add Client
+                        </a>
+                    </div>
+                }
+            </div>
+
+            <!-- License Status Breakdown -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">License Status Distribution</h2>
+                </div>
+
+                <div class="distribution-item">
+                    <div class="distribution-label">
+                        <span class="status-indicator" style="background: var(--color-success);"></span>
+                        Active
+                    </div>
+                    <div class="distribution-bar">
+                        <div class="distribution-fill" style="width: @(Model.TotalClients > 0 ? (Model.ActiveClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%; background: var(--color-success);"></div>
+                    </div>
+                    <div class="distribution-value">
+                        @Model.ActiveClients (@(Model.TotalClients > 0 ? (Model.ActiveClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%)
+                    </div>
+                </div>
+
+                <div class="distribution-item">
+                    <div class="distribution-label">
+                        <span class="status-indicator" style="background: #3B82F6;"></span>
+                        Trial
+                    </div>
+                    <div class="distribution-bar">
+                        <div class="distribution-fill" style="width: @(Model.TotalClients > 0 ? (Model.TrialClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%; background: #3B82F6;"></div>
+                    </div>
+                    <div class="distribution-value">
+                        @Model.TrialClients (@(Model.TotalClients > 0 ? (Model.TrialClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%)
+                    </div>
+                </div>
+
+                <div class="distribution-item">
+                    <div class="distribution-label">
+                        <span class="status-indicator" style="background: var(--color-warning);"></span>
+                        Expiring Soon
+                    </div>
+                    <div class="distribution-bar">
+                        <div class="distribution-fill" style="width: @(Model.TotalClients > 0 ? (Model.ExpiringSoonClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%; background: var(--color-warning);"></div>
+                    </div>
+                    <div class="distribution-value">
+                        @Model.ExpiringSoonClients (@(Model.TotalClients > 0 ? (Model.ExpiringSoonClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%)
+                    </div>
+                </div>
+
+                <div class="distribution-item">
+                    <div class="distribution-label">
+                        <span class="status-indicator" style="background: var(--color-danger);"></span>
+                        Expired
+                    </div>
+                    <div class="distribution-bar">
+                        <div class="distribution-fill" style="width: @(Model.TotalClients > 0 ? (Model.ExpiredClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%; background: var(--color-danger);"></div>
+                    </div>
+                    <div class="distribution-value">
+                        @Model.ExpiredClients (@(Model.TotalClients > 0 ? (Model.ExpiredClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Requests & Conversion Stats -->
+        <div class="content-grid">
+            <!-- Recent Requests -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Requests</h2>
+                    <a href="@Url.Action("ManageDemoRequests", "DemoRequest")" class="card-action">View All</a>
+                </div>
+
+                @if (Model.RecentDemoRequests?.Any() == true)
+                {
+                    @foreach (var demo in Model.RecentDemoRequests)
+                    {
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <div class="list-item-title">@demo.CompanyName</div>
+                                <div class="list-item-subtitle">
+                                    @demo.ContactPersonName ·
+                                    @demo.RequestDate.ToString("dd MMM yyyy")
+                                </div>
+                            </div>
+                            <div class="list-item-actions">
+                                @switch (demo.Status)
+                                {
+                                    case Central_Hub.Models.DemoRequestStatus.Pending:
+                                        <span class="badge badge-warning">Pending</span>
+                                        break;
+                                    case Central_Hub.Models.DemoRequestStatus.Scheduled:
+                                        <span class="badge badge-info">Scheduled</span>
+                                        break;
+                                    case Central_Hub.Models.DemoRequestStatus.Completed:
+                                        <span class="badge badge-success">Completed</span>
+                                        break;
+                                    case Central_Hub.Models.DemoRequestStatus.Converted:
+                                        <span class="badge badge-success">Converted</span>
+                                        break;
+                                }
+                                <a href="@Url.Action("DemoRequestDetails", "DemoRequest", new { id = demo.DemoRequestId })"
+                                   class="btn btn-primary btn-sm">View</a>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p>No requests yet.</p>
+                        <a href="@Url.Action("RequestDemo", "DemoRequest")" class="btn btn-primary btn-sm" style="margin-top: 16px;" target="_blank">
+                            View Form
+                        </a>
+                    </div>
+                }
+            </div>
+
+            <!-- Conversion Statistics -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">Conversion Performance</h2>
+                </div>
+
+                <div class="conversion-display">
+                    <div class="conversion-value">
+                        @Model.ConversionRate.ToString("F1")<span style="font-size: 2.5rem;">%</span>
+                    </div>
+                    <div class="stat-label">Conversion Rate</div>
+                </div>
+
+                <div class="conversion-stats">
+                    <div class="conversion-stat">
+                        <div class="conversion-stat-value">@Model.ScheduledDemos</div>
+                        <div class="conversion-stat-label">Scheduled</div>
+                    </div>
+                    <div class="conversion-stat">
+                        <div class="conversion-stat-value">@Model.CompletedDemos</div>
+                        <div class="conversion-stat-label">Completed</div>
+                    </div>
+                    <div class="conversion-stat">
+                        <div class="conversion-stat-value" style="color: var(--color-success);">@Model.ConvertedDemos</div>
+                        <div class="conversion-stat-label">Converted</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Credit Transactions -->
+        @if (Model.RecentCreditTransactions?.Any() == true)
+        {
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Credit Transactions</h2>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--color-bg-canvas);">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Date</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Company</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Type</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Credits</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Amount</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Expiry Date</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var transaction in Model.RecentCreditTransactions)
+                            {
+                                <tr style="border-bottom: 1px solid var(--color-bg-canvas);">
+                                    <td style="padding: 12px; white-space: nowrap;">@transaction.TransactionDate.ToString("dd MMM yyyy")</td>
+                                    <td style="padding: 12px;">
+                                        <a href="@Url.Action("Details", "ClientCompany", new { id = transaction.CompanyId })"
+                                           style="color: var(--color-accent); text-decoration: none; font-weight: 500;">
+                                            @transaction.Company.CompanyName
+                                        </a>
+                                    </td>
+                                    <td style="padding: 12px;">
+                                        @switch (transaction.TransactionType)
+                                        {
+                                            case Central_Hub.Models.CreditTransactionType.Purchase:
+                                                <span class="badge badge-success">Purchase</span>
+                                                break;
+                                            case Central_Hub.Models.CreditTransactionType.Bonus:
+                                                <span class="badge badge-info">Bonus</span>
+                                                break;
+                                            default:
+                                                <span class="badge badge-info">@transaction.TransactionType</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td style="padding: 12px;"><strong style="color: var(--color-accent); font-size: 1.1rem;">@transaction.CreditsAmount</strong></td>
+                                    <td style="padding: 12px; white-space: nowrap;">R @(transaction.AmountPaid?.ToString("N2") ?? "-")</td>
+                                    <td style="padding: 12px; white-space: nowrap;">@transaction.ExpiryDate.ToString("dd MMM yyyy")</td>
+                                    <td style="padding: 12px;"><code style="font-size: 0.85rem; background: #F1F5F9; padding: 4px 8px; border-radius: 4px;">@transaction.ReferenceNumber</code></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        <!-- Quick Actions Footer -->
+        <div class="quick-actions">
+            <h3>Quick Actions</h3>
+            <div class="quick-actions-grid">
+                <a href="@Url.Action("Create", "ClientCompany")" class="btn btn-primary">
+                    + Add New Client
+                </a>
+                <a href="@Url.Action("ManageDemoRequests", "DemoRequest")" class="btn btn-primary">
+                    📋 Manage Requests
+                </a>
+                <a href="@Url.Action("Index", "ClientCompany")" class="btn btn-primary">
+                    👥 View All Clients
+                </a>
+                <a href="@Url.Action("RequestDemo", "DemoRequest")" class="btn btn-primary" target="_blank">
+                    🔗 Preview Form
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

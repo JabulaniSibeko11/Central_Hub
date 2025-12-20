@@ -1,0 +1,124 @@
+﻿@model IEnumerable<Central_Hub.Models.DemoRequest>
+@{
+    ViewData["Title"] = "Manage Demo Requests";
+}
+
+<div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
+    <h2 style="margin: 0;">Demo Requests</h2>
+    <a href="@Url.Action("RequestDemo")" class="btn btn-secondary" target="_blank">
+        View Public Form
+    </a>
+</div>
+
+<!-- Status Filter -->
+<div class="card" style="margin-bottom: 24px;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="@Url.Action("ManageDemoRequests", new { status = "all" })"
+           class="btn @(ViewBag.SelectedStatus == "all" ? "btn-primary" : "btn-secondary") btn-sm">
+            All Requests
+        </a>
+        <a href="@Url.Action("ManageDemoRequests", new { status = "Pending" })"
+           class="btn @(ViewBag.SelectedStatus == "Pending" ? "btn-primary" : "btn-secondary") btn-sm">
+            Pending
+        </a>
+        <a href="@Url.Action("ManageDemoRequests", new { status = "Scheduled" })"
+           class="btn @(ViewBag.SelectedStatus == "Scheduled" ? "btn-primary" : "btn-secondary") btn-sm">
+            Scheduled
+        </a>
+        <a href="@Url.Action("ManageDemoRequests", new { status = "Completed" })"
+           class="btn @(ViewBag.SelectedStatus == "Completed" ? "btn-primary" : "btn-secondary") btn-sm">
+            Completed
+        </a>
+        <a href="@Url.Action("ManageDemoRequests", new { status = "Converted" })"
+           class="btn @(ViewBag.SelectedStatus == "Converted" ? "btn-primary" : "btn-secondary") btn-sm">
+            Converted
+        </a>
+    </div>
+</div>
+
+@if (Model.Any())
+{
+    <div class="card">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Company Name</th>
+                    <th>Contact Person</th>
+                    <th>Email</th>
+                    <th>Organization Type</th>
+                    <th>Request Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var request in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong style="color: var(--color-primary);">@request.CompanyName</strong><br />
+                            <small class="text-muted">@request.Province</small>
+                        </td>
+                        <td>
+                            @request.ContactPersonName<br />
+                            <small class="text-muted">@request.JobTitle</small>
+                        </td>
+                        <td>
+                            <a href="mailto:@request.Email" style="color: var(--color-accent); text-decoration: none;">
+                                @request.Email
+                            </a><br />
+                            <small class="text-muted">@request.PhoneNumber</small>
+                        </td>
+                        <td>@request.OrganizationType</td>
+                        <td>@request.RequestDate.ToString("dd MMM yyyy")</td>
+                        <td>
+                            @switch (request.Status)
+                            {
+                                case Central_Hub.Models.DemoRequestStatus.Pending:
+                                    <span class="badge badge-warning">Pending</span>
+                                    break;
+                                case Central_Hub.Models.DemoRequestStatus.Scheduled:
+                                    <span class="badge badge-info">Scheduled</span>
+                                    break;
+                                case Central_Hub.Models.DemoRequestStatus.Completed:
+                                    <span class="badge badge-success">Completed</span>
+                                    break;
+                                case Central_Hub.Models.DemoRequestStatus.Converted:
+                                    <span class="badge badge-success">Converted</span>
+                                    break;
+                                case Central_Hub.Models.DemoRequestStatus.NotInterested:
+                                    <span class="badge badge-danger">Not Interested</span>
+                                    break;
+                                default:
+                                    <span class="badge badge-info">@request.Status</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            <a href="@Url.Action("DemoRequestDetails", new { id = request.DemoRequestId })"
+                               class="btn btn-primary btn-sm">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="card text-center" style="padding: 60px;">
+        <h3 style="color: var(--color-text-muted); margin-bottom: 16px;">No Demo Requests Found</h3>
+        <p class="text-muted">
+            @if (ViewBag.SelectedStatus != "all")
+            {
+                <text>No demo requests with status "@ViewBag.SelectedStatus" at the moment.</text>
+            }
+            else
+            {
+                <text>There are no demo requests yet. Share the demo request form with potential clients.</text>
+            }
+        </p>
+    </div>
+}

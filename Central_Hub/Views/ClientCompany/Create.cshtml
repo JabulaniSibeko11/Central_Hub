@@ -1,0 +1,205 @@
+﻿@model ClientCompany
+@{
+    ViewData["Title"] = "Create New Client";
+    Layout= null;
+
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Client - Declarify Central Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="~/css/dashboard.css" rel="stylesheet" />
+    <link href="~/css/createclientcss.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="form-header">
+            <h1>Create New Client Company</h1>
+            <p>Add a new client to the Declarify Central Hub system</p>
+        </div>
+
+        <!-- Info Card -->
+        <div class="info-card">
+            <div class="info-card-title">
+                <span>💡</span>
+                What happens when you create a client?
+            </div>
+            <div class="info-card-content">
+                <ul>
+                    <li>A unique license key will be automatically generated</li>
+                    <li>The client will start with a 30-day trial period</li>
+                    <li>An administrator account will be created for the company</li>
+                    <li>Initial credit balance will be set to 0 (you can add credits after creation)</li>
+                </ul>
+            </div>
+        </div>
+
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+
+            <!-- Company Information -->
+            <div class="form-card">
+                <h2 class="section-title">
+                    <span class="section-icon">🏢</span>
+                    Company Information
+                </h2>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" asp-for="CompanyName">
+                            Company Name <span class="required">*</span>
+                        </label>
+                        <input type="text" class="form-input" asp-for="CompanyName" required />
+                        <span asp-validation-for="CompanyName" class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" asp-for="RegistrationNumber">
+                            Registration Number <span class="required">*</span>
+                        </label>
+                        <input type="text" class="form-input" asp-for="RegistrationNumber" required />
+                        <span class="form-help">Company registration or tax number</span>
+                        <span asp-validation-for="RegistrationNumber" class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" asp-for="EmailDomain">
+                            Email Domain <span class="required">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-prefix">@@</span>
+                            <input type="text" class="form-input" asp-for="EmailDomain" placeholder="company.com" required />
+                        </div>
+                        <span class="form-help">Company email domain (e.g., acmecorp.com)</span>
+                        <span asp-validation-for="EmailDomain" class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" asp-for="CompanyType">
+                            Company Type <span class="required">*</span>
+                        </label>
+                        <select class="form-select" asp-for="CompanyType" required>
+                            <option value="">Select company type...</option>
+                            <option value="NationalGovernment">National Government</option>
+                            <option value="ProvincialGovernment">Provincial Government</option>
+                            <option value="MunicipalityMetro">Municipality - Metro</option>
+                            <option value="MunicipalityLocal">Municipality - Local</option>
+                            <option value="MunicipalityDistrict">Municipality - District</option>
+                            <option value="StateOwnedEnterprise">State-Owned Enterprise</option>
+                            <option value="PublicEntity">Public Entity</option>
+                            <option value="OtherPublicSector">Other Public Sector</option>
+                        </select>
+                        <span asp-validation-for="CompanyType" class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" asp-for="Province">
+                            Province <span class="required">*</span>
+                        </label>
+                        <select class="form-select" asp-for="Province" required>
+                            <option value="">Select province...</option>
+                            <option value="Gauteng">Gauteng</option>
+                            <option value="Western Cape">Western Cape</option>
+                            <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                            <option value="Eastern Cape">Eastern Cape</option>
+                            <option value="Limpopo">Limpopo</option>
+                            <option value="Mpumalanga">Mpumalanga</option>
+                            <option value="North West">North West</option>
+                            <option value="Free State">Free State</option>
+                            <option value="Northern Cape">Northern Cape</option>
+                        </select>
+                        <span asp-validation-for="Province" class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" asp-for="EstimatedEmployeeCount">
+                            Estimated Employee Count <span class="required">*</span>
+                        </label>
+                        <input type="number" class="form-input" asp-for="EstimatedEmployeeCount" min="1" required />
+                        <span class="form-help">Approximate number of employees</span>
+                        <span asp-validation-for="EstimatedEmployeeCount" class="validation-error"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Administrator Information -->
+            <div class="form-card">
+                <h2 class="section-title">
+                    <span class="section-icon">👤</span>
+                    Administrator Account
+                </h2>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="admin_firstname">
+                            First Name <span class="required">*</span>
+                        </label>
+                        <input type="text" class="form-input" id="admin_firstname" name="admin.FirstName" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="admin_surname">
+                            Surname <span class="required">*</span>
+                        </label>
+                        <input type="text" class="form-input" id="admin_surname" name="admin.Surname" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="admin_email">
+                            Email Address <span class="required">*</span>
+                        </label>
+                        <input type="email" class="form-input" id="admin_email" name="admin.Email" required />
+                        <span class="form-help">Must match company email domain</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="admin_phone">
+                            Phone Number <span class="required">*</span>
+                        </label>
+                        <input type="tel" class="form-input" id="admin_phone" name="admin.PhoneNumber" placeholder="+27 XX XXX XXXX" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="admin_jobtitle">
+                            Job Title
+                        </label>
+                        <input type="text" class="form-input" id="admin_jobtitle" name="admin.JobTitle" placeholder="e.g., IT Manager" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="admin_department">
+                            Department
+                        </label>
+                        <input type="text" class="form-input" id="admin_department" name="admin.Department" placeholder="e.g., Information Technology" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden field for demo conversion -->
+            <input type="hidden" name="DemoRequestId" value="@ViewBag.DemoRequestId" />
+
+            <!-- Form Actions -->
+            <div class="form-card">
+                <div class="form-actions">
+                    <a href="@Url.Action("Index", "ClientCompany")" class="btn btn-secondary btn-large">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-large">
+                        🎉 Create Client Company
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    @section Scripts {
+        <partial name="_ValidationScriptsPartial" />
+        <script src="~/js/createclient.js"></script>
+      
+    }
+</body>
+</html>
