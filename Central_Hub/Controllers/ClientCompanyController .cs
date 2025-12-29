@@ -1,9 +1,10 @@
-﻿using Central_Hub.Data;
+﻿using System.Security.Policy;
+using Central_Hub.Data;
 using Central_Hub.Models;
+using Central_Hub.Models.ViewModels;
 using Central_Hub.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Policy;
 
 namespace Central_Hub.Controllers
 {
@@ -52,8 +53,28 @@ namespace Central_Hub.Controllers
                 return NotFound();
             }
 
+            // Calculate credit stats from batches
+            var now = DateTime.UtcNow;
+            var availableCredits = company.CreditBatches
+                .Where(b => b.ExpiryDate > now)
+                .Sum(b => b.RemainingAmount);
 
-            return View(company);
+            var totalPurchased = company.CreditBatches
+                .Sum(b => b.OriginalAmount);
+
+            var totalUsed = company.CreditBatches
+                .Sum(b => b.OriginalAmount - b.RemainingAmount);
+
+
+            var viewModel = new CompanyDetailsViewModel
+            {
+                Company = company,
+                AvailableCredits = availableCredits,
+                TotalCreditsPurchased = totalPurchased,
+                TotalCreditsUsed = totalUsed
+            };
+
+            return View(viewModel);
 
         }
 
@@ -108,41 +129,70 @@ namespace Central_Hub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ClientCompany company, CompanyAdministrator admin)
         {
-          
-                var existingCompany = await _Db.ClientCompanies.FirstOrDefaultAsync(c => c.EmailDomain == company.EmailDomain);
 
-                if (existingCompany != null) {
-                    ModelState.AddModelError("EmailDomain", "A company with this email domain already exists.");
-                    return View(company);
-                }
+            var existingCompany = await _Db.ClientCompanies.FirstOrDefaultAsync(c => c.EmailDomain == company.EmailDomain);
+
+            if (existingCompany != null)
+            {
+                ModelState.AddModelError("EmailDomain", "A company with this email domain already exists.");
+                return View(company);
+            }
 
 
-                company.LicenseKey = _LS.GenerateLicenseKey(company);
-                company.LicenseIssueDate = DateTime.UtcNow;
-                company.LicenseExpiryDate = _LS.CalculateLicenseExpiryDate();
-                company.LicenseStatus = LicenseStatus.Trial;
-                company.CreatedDate = DateTime.UtcNow;
-                company.IsActive = true;
+            company.LicenseKey = _LS.GenerateLicenseKey(company);
+            company.LicenseIssueDate = DateTime.UtcNow;
+            company.LicenseExpiryDate = _LS.CalculateLicenseExpiryDate();
+            company.LicenseStatus = LicenseStatus.Trial;
+            company.CreatedDate = DateTime.UtcNow;
+            company.IsActive = false;
 
             company.Administrator = admin;
 
-                _Db.ClientCompanies.Add(company);
-                await _Db.SaveChangesAsync();
+            _Db.ClientCompanies.Add(company);
+            await _Db.SaveChangesAsync();
 
-                if (int.TryParse(Request.Form["DemoRequestId"], out int demoRequestId) && demoRequestId > 0) {
-                    var demoRequest = await _Db.DemoRequests.FindAsync(demoRequestId);
-                    if (demoRequest != null)
-                    {
-                        demoRequest.ConvertedToClient = true;
-                        demoRequest.ConversionDate = DateTime.UtcNow;
-                        demoRequest.ConvertedCompanyId = company.CompanyId;
-                        demoRequest.Status = DemoRequestStatus.Converted;
-                        await _Db.SaveChangesAsync();
-                    }
+            if (int.TryParse(Request.Form["DemoRequestId"], out int demoRequestId) && demoRequestId > 0)
+            {
+                var demoRequest = await _Db.DemoRequests.FindAsync(demoRequestId);
+                if (demoRequest != null)
+                {
+                    demoRequest.ConvertedToClient = true;
+                    demoRequest.ConversionDate = DateTime.UtcNow;
+                    demoRequest.ConvertedCompanyId = company.CompanyId;
+                    demoRequest.Status = DemoRequestStatus.Converted;
+                    await _Db.SaveChangesAsync();
                 }
-                TempData["SuccessMessage"] = $"Client company created successfully. License Key: {company.LicenseKey}";
-                return RedirectToAction(nameof(Details), new { id = company.CompanyId });
-            
+            }
+
+            //var instance = new ClientInstance
+            //{
+            //    CompanyName = company.CompanyName,
+            //    Region = "N/A",
+            //    CompanyAddress = company.PhysicalAddress,
+            //    CompanyEmail = admin.Email,
+            //    CompanyPhone = admin.PhoneNumber,
+            //    EmailDomain = company.EmailDomain,
+            //    AdminName = admin.FullName,
+            //    AdminEmail = admin.Email,
+            //    AdminDepartment = admin.Department,
+            //    LicenseKey = company.LicenseKey,
+            //    LicenseIssueDate = company.LicenseIssueDate,
+            //    LicenseExpiryDate = company.LicenseExpiryDate,
+            //    Status = LicenseStatus.Suspended,
+            //    CurrentCreditBalance = company.CurrentCreditBalance,
+            //    TotalCreditsPurchased = company.TotalCreditsPurchased,
+            //    DateCreated = company.CreatedDate,
+            //    DateModified = company.CreatedDate,
+            //    IsActive = false
+
+            //};
+
+            //_Db.ClientInstance.Add(instance);
+            //await _Db.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Client company created successfully. License Key: {company.LicenseKey}";
+            return RedirectToAction(nameof(Details), new { id = company.CompanyId });
+
             //return View(company);
         }
 
@@ -150,36 +200,59 @@ namespace Central_Hub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddCredit(int companyId, int creditAmount, decimal amountPaid, string notes)
         {
+            if (creditAmount <= 0)
+            {
+                TempData["ErrorMessage"] = "Credit amount must be greater than zero.";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
 
             var company = await _Db.ClientCompanies.FindAsync(companyId);
+
             if (company == null)
             {
                 return NotFound();
             }
 
+            var now = DateTime.UtcNow;
+
+            // 1. Create the new credit batch
+            var newBatch = new CreditBatch
+            {
+                CompanyId = company.CompanyId,
+                OriginalAmount = creditAmount,
+                RemainingAmount = creditAmount,
+                LoadDate = now,
+                PurchaseReference = $"INV-{now:yyyyMMdd}-{company.CompanyId}",
+                Notes = notes
+            };
+
+            _Db.CreditBatches.Add(newBatch);
+            await _Db.SaveChangesAsync();
+
+            // 2. Create the audit transaction
             var transaction = new CreditTransaction
             {
-                CompanyId = companyId,
+                CompanyId = company.CompanyId,
+                BatchId = newBatch.BatchId,
                 TransactionType = CreditTransactionType.Purchase,
                 CreditsAmount = creditAmount,
                 AmountPaid = amountPaid,
-                TransactionDate = DateTime.UtcNow,
-                ExpiryDate = _LS.CalculateCreditExpiryDate(),
-                ReferenceNumber = $"CR-{DateTime.UtcNow.Ticks}",
+                TransactionDate = now,
+                ExpiryDate = newBatch.ExpiryDate,
+                ReferenceNumber = newBatch.PurchaseReference,
                 CreatedBy = "Admin",
                 Notes = notes
             };
 
-            company.CurrentCreditBalance += creditAmount;
-            company.TotalCreditsPurchased += creditAmount;
+            _Db.CreditTransactions.Add(transaction);
+
+            company.LastModifiedDate = now;
 
             _Db.CreditTransactions.Add(transaction);
             await _Db.SaveChangesAsync();
 
             TempData["SuccessMessage"] = $"Successfully added {creditAmount} credits to {company.CompanyName}.";
             return RedirectToAction(nameof(Details), new { id = companyId });
-
-
         }
 
         [HttpPost]
@@ -217,17 +290,59 @@ namespace Central_Hub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateLicenseStatus(int companyId, LicenseStatus status) { 
-         var company = await _Db.ClientCompanies.FindAsync(companyId);
-            if (company == null) { 
-            return NotFound();  
+        public async Task<IActionResult> UpdateLicenseStatus(int companyId, LicenseStatus status)
+        {
+            var company = await _Db.ClientCompanies.FindAsync(companyId);
+            if (company == null)
+            {
+                return NotFound();
             }
-             company.LicenseStatus = status;
+            company.LicenseStatus = status;
             company.LastModifiedDate = DateTime.UtcNow;
             await _Db.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "License status updated successfully.";
             return RedirectToAction(nameof(Details), new { id = companyId });
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> ApproveRequest(int requestId, int approvedAmount)
+        {
+            var request = await _Db.CreditRequests.FindAsync(requestId);
+            if (request == null) return NotFound();
+
+            request.Status = CreditRequestStatus.Approved;
+            request.ProcessedDate = DateTime.UtcNow;
+            request.ProcessedBy = User.Identity.Name;
+
+            // Create the actual credit batch
+            var newBatch = new CreditBatch
+            {
+                CompanyId = request.CompanyId,
+                OriginalAmount = approvedAmount,
+                RemainingAmount = approvedAmount,
+                LoadDate = DateTime.UtcNow,
+                ExpiryDate = DateTime.UtcNow.AddMonths(12),
+                PurchaseReference = $"APPROVED-{request.RequestId}"
+            };
+
+            _Db.CreditBatches.Add(newBatch);
+
+            // Log transaction
+            _Db.CreditTransactions.Add(new CreditTransaction
+            {
+                CompanyId = request.CompanyId,
+                BatchId = newBatch.BatchId,
+                TransactionType = CreditTransactionType.Purchase,
+                CreditsAmount = approvedAmount,
+                TransactionDate = DateTime.UtcNow,
+                Notes = $"Approved request {request.RequestId}"
+            });
+
+            await _Db.SaveChangesAsync();
+
+            return RedirectToAction("CreditRequests");
         }
     }
 }

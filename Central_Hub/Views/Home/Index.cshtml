@@ -1,4 +1,5 @@
-﻿@model Central_Hub.Models.DashboardViewModel
+﻿@using Central_Hub.Models.ViewModels
+@model DashboardViewModel
 @{
     ViewData["Title"] = "Central Hub Dashboard";
     Layout = null;
@@ -350,7 +351,7 @@
                                 <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Type</th>
                                 <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Credits</th>
                                 <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Amount</th>
-                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Expiry Date</th>
+                               @*  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Expiry Date</th> *@
                                 <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Reference</th>
                             </tr>
                         </thead>
@@ -381,7 +382,7 @@
                                     </td>
                                     <td style="padding: 12px;"><strong style="color: var(--color-accent); font-size: 1.1rem;">@transaction.CreditsAmount</strong></td>
                                     <td style="padding: 12px; white-space: nowrap;">R @(transaction.AmountPaid?.ToString("N2") ?? "-")</td>
-                                    <td style="padding: 12px; white-space: nowrap;">@transaction.ExpiryDate.ToString("dd MMM yyyy")</td>
+                                   @*  <td style="padding: 12px; white-space: nowrap;">@transaction.ExpiryDate.ToString("dd MMM yyyy")</td> *@
                                     <td style="padding: 12px;"><code style="font-size: 0.85rem; background: #F1F5F9; padding: 4px 8px; border-radius: 4px;">@transaction.ReferenceNumber</code></td>
                                 </tr>
                             }

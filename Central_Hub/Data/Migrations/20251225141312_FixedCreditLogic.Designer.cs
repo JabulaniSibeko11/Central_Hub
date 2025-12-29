@@ -4,6 +4,7 @@ using Central_Hub.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Central_Hub.Data.Migrations
 {
     [DbContext(typeof(Central_HubDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251225141312_FixedCreditLogic")]
+    partial class FixedCreditLogic
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -211,48 +214,6 @@ namespace Central_Hub.Data.Migrations
                     b.HasIndex("ExpiryDate");
 
                     b.ToTable("CreditBatches");
-                });
-
-            modelBuilder.Entity("Central_Hub.Models.CreditRequest", b =>
-                {
-                    b.Property<int>("RequestId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestId"));
-
-                    b.Property<decimal?>("AmountToPay")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProcessedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ProcessedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Reason")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("RequestDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("RequestedCredits")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.HasKey("RequestId");
-
-                    b.HasIndex("CompanyId");
-
-                    b.ToTable("CreditRequests");
                 });
 
             modelBuilder.Entity("Central_Hub.Models.CreditTransaction", b =>
@@ -702,17 +663,6 @@ namespace Central_Hub.Data.Migrations
                 {
                     b.HasOne("Central_Hub.Models.ClientCompany", "Company")
                         .WithMany("CreditBatches")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Company");
-                });
-
-            modelBuilder.Entity("Central_Hub.Models.CreditRequest", b =>
-                {
-                    b.HasOne("Central_Hub.Models.ClientCompany", "Company")
-                        .WithMany()
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

@@ -15,16 +15,17 @@ namespace Central_Hub.Data
         public DbSet<ClientCompany> ClientCompanies { get; set; }
         public DbSet<CompanyAdministrator> CompanyAdministrators { get; set; }
         public DbSet<DemoRequest> DemoRequests { get; set; }
+        public DbSet<CreditBatch> CreditBatches { get; set; }
+        public DbSet<CreditRequest> CreditRequests { get; set; }
         public DbSet<CreditTransaction> CreditTransactions { get; set; }
         public DbSet<LicenseRenewal> LicenseRenewals { get; set; }
+
+        
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<ClientInstance>()
-      .HasIndex(e => e.LicenseKey)
-      .IsUnique();
             // Configure relationships
             modelBuilder.Entity<ClientCompany>()
                 .HasOne(c => c.Administrator)
@@ -61,6 +62,10 @@ namespace Central_Hub.Data
 
             modelBuilder.Entity<DemoRequest>()
                 .HasIndex(d => d.Status);
+
+            // On CreditBatch
+            modelBuilder.Entity<CreditBatch>()
+                .HasIndex(b => b.ExpiryDate);
         }
     }
 }

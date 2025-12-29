@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Central_Hub.Models
+namespace Central_Hub.Models.ViewModels
 {
     public class LoginViewModel
     {

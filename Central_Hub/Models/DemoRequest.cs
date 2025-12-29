@@ -103,8 +103,8 @@ namespace Central_Hub.Models
             public DateTime? ConversionDate { get; set; }
 
             public int? ConvertedCompanyId { get; set; }
-        public int? ClientInstanceId { get; set; }
-        public virtual ClientInstance? ClientInstance { get; set; }
+        //public int? ClientInstanceId { get; set; }
+        //public virtual ClientInstance? ClientInstance { get; set; }
     }
 
         public enum DemoRequestStatus

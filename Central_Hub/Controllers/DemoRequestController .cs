@@ -47,7 +47,7 @@ namespace Central_Hub.Controllers
                 demoRequest.RequestDate = DateTime.UtcNow;
                 demoRequest.Status = DemoRequestStatus.Pending;
 
-                demoRequest.ClientInstanceId = null;
+                //demoRequest.ClientInstanceId = null;
 
 
                 _Db.DemoRequests.Add(demoRequest);
