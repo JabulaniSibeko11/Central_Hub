@@ -291,10 +291,35 @@ namespace Central_Hub.Controllers.Api
             });
         }
 
-        
+
 
 
         // ----------- End of Credits Logic ----------------//
+
+
+        // ----------- Company Information ----------------//
+        [HttpGet("company-info")]
+        public async Task<IActionResult> CompanyInfomation()
+        {
+            //API to collect information
+            var company = HttpContext.Items["Company"] as ClientCompany;
+            if (company == null)
+            {
+                return Unauthorized(new { Message = "Authentication failed: Company not found or inactive" });
+            }
+
+            var response = new CompanyInformationResponse
+            {
+                CompanyName = company.CompanyName,
+                CompanyRegistration = company.RegistrationNumber,
+                Industry = company.EmailDomain,
+                RegisteredDate = company.CreatedDate
+            };
+
+            return Ok(response);
+
+        }
+
 
 
 
