@@ -22,8 +22,8 @@
             <div class="header-actions">
                @*  <button asp-action="Create" asp-controller="ClientCompany"  class="btn btn-primary">+ Add New Client</button>
  *@
-                <a href="@Url.Action("Create", "ClientCompany")" class="btn btn-primary">
-                    + Add New Client
+                <a href="@Url.Action("RequestDemo", "DemoRequest")" class="btn btn-primary">
+                    + Add New Request
                 </a>
                @*  <button class="btn btn-secondary">View Requests</button> *@
                 <a href="@Url.Action("ManageDemoRequest", "DemoRequest")" class="btn btn-secondary">
@@ -256,7 +256,7 @@
             <div class="content-card">
                 <div class="card-header">
                     <h2 class="card-title">Recent Requests</h2>
-                    <a href="@Url.Action("ManageDemoRequests", "DemoRequest")" class="card-action">View All</a>
+                    <a href="@Url.Action("ManageDemoRequest", "DemoRequest")" class="card-action">View All</a>
                 </div>
 
                 @if (Model.RecentDemoRequests?.Any() == true)
@@ -396,8 +396,8 @@
         <div class="quick-actions">
             <h3>Quick Actions</h3>
             <div class="quick-actions-grid">
-                <a href="@Url.Action("Create", "ClientCompany")" class="btn btn-primary">
-                    + Add New Client
+                <a href="@Url.Action("RequestDemo", "DemoRequest")" class="btn btn-primary">
+                    + Add New Request
                 </a>
                 <a href="@Url.Action("ManageDemoRequests", "DemoRequest")" class="btn btn-primary">
                     📋 Manage Requests
