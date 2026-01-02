@@ -9,58 +9,47 @@ namespace Central_Hub.Models
         public int TransactionId { get; set; }
 
         [Required]
-        [ForeignKey("Company")]
         public int CompanyId { get; set; }
 
-        [Display(Name = "Transaction Type")]
+        public int? BatchId { get; set; }
+
         public CreditTransactionType TransactionType { get; set; }
 
-        [Display(Name = "Credits Amount")]
-        public int CreditsAmount { get; set; }
-
-        [Display(Name = "Transaction Date")]
-        public DateTime TransactionDate { get; set; } = DateTime.UtcNow;
-
-        [Display(Name = "Expiry Date")]
-        public DateTime ExpiryDate { get; set; }
-
-        [Display(Name = "Reference Number")]
-        [StringLength(50)]
-        public string? ReferenceNumber { get; set; }
-
-        [Display(Name = "Amount Paid")]
-        [Column(TypeName = "decimal(18,2)")]
         public decimal? AmountPaid { get; set; }
 
-        [StringLength(500)]
-        [Display(Name = "Notes")]
-        public string? Notes { get; set; }
+        public int CreditsAmount { get; set; } 
 
-        [Display(Name = "Created By")]
+        public DateTime TransactionDate { get; set; } = DateTime.UtcNow;
+
+        public DateTime ExpiryDate { get; set; }
+
+        public string? ReferenceNumber { get; set; }
+        public string? Notes { get; set; }
         public string? CreatedBy { get; set; }
 
-        // Navigation Property
-        public virtual ClientCompany? Company { get; set; }
-        public int ClientInstanceId { get; set; }
-        public virtual ClientInstance? ClientInstance { get; set; }
+        public virtual ClientCompany Company { get; set; } = null!;
+        public virtual CreditBatch? Batch { get; set; }
     }
 
     public enum CreditTransactionType
     {
         [Display(Name = "Purchase")]
-        Purchase,
+        Purchase = 0,
 
         [Display(Name = "Bonus Credits")]
-        Bonus,
+        Bonus = 1,
 
         [Display(Name = "Refund")]
-        Refund,
+        Refund = 2,
 
         [Display(Name = "Adjustment")]
-        Adjustment,
+        Adjustment = 3,
 
         [Display(Name = "Expired")]
-        Expired
+        Expired = 4,
+
+        [Display(Name = "Spend Credits")]
+        Spend = 5,
     }
 
     public class LicenseRenewal
@@ -106,7 +95,7 @@ namespace Central_Hub.Models
         // Navigation Property
         public virtual ClientCompany? Company { get; set; }
 
-        public int ClientInstanceId { get; set; }
-        public virtual ClientInstance? ClientInstance { get; set; }
+        //public int ClientInstanceId { get; set; }
+        //public virtual ClientInstance? ClientInstance { get; set; }
     }
 }

@@ -4,6 +4,7 @@ using Central_Hub.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Central_Hub.Data.Migrations
 {
     [DbContext(typeof(Central_HubDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251220191758_FixedClientInstance")]
+    partial class FixedClientInstance
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,6 +55,9 @@ namespace Central_Hub.Data.Migrations
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentCreditBalance")
+                        .HasColumnType("int");
 
                     b.Property<string>("EmailDomain")
                         .IsRequired()
@@ -101,6 +107,12 @@ namespace Central_Hub.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("TotalCreditsPurchased")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalCreditsUsed")
+                        .HasColumnType("int");
+
                     b.HasKey("CompanyId");
 
                     b.HasIndex("EmailDomain");
@@ -109,6 +121,104 @@ namespace Central_Hub.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("ClientCompanies");
+                });
+
+            modelBuilder.Entity("Central_Hub.Models.ClientInstance", b =>
+                {
+                    b.Property<int>("ClientInstanceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClientInstanceId"));
+
+                    b.Property<string>("AdminDepartment")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("AdminEmail")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AdminName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AdminPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("CompanyAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("CompanyEmail")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CompanyPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CurrentCreditBalance")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmailDomain")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("InstanceServerUrl")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastSyncDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LicenseExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LicenseIssueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LicenseKey")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalCreditsPurchased")
+                        .HasColumnType("int");
+
+                    b.HasKey("ClientInstanceId");
+
+                    b.ToTable("ClientInstance");
                 });
 
             modelBuilder.Entity("Central_Hub.Models.CompanyAdministrator", b =>
@@ -175,86 +285,6 @@ namespace Central_Hub.Data.Migrations
                     b.ToTable("CompanyAdministrators");
                 });
 
-            modelBuilder.Entity("Central_Hub.Models.CreditBatch", b =>
-                {
-                    b.Property<int>("BatchId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BatchId"));
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ExpiryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("LoadDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("OriginalAmount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PurchaseReference")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("RemainingAmount")
-                        .HasColumnType("int");
-
-                    b.HasKey("BatchId");
-
-                    b.HasIndex("CompanyId");
-
-                    b.HasIndex("ExpiryDate");
-
-                    b.ToTable("CreditBatches");
-                });
-
-            modelBuilder.Entity("Central_Hub.Models.CreditRequest", b =>
-                {
-                    b.Property<int>("RequestId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestId"));
-
-                    b.Property<decimal?>("AmountToPay")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProcessedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ProcessedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Reason")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("RequestDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("RequestedCredits")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.HasKey("RequestId");
-
-                    b.HasIndex("CompanyId");
-
-                    b.ToTable("CreditRequests");
-                });
-
             modelBuilder.Entity("Central_Hub.Models.CreditTransaction", b =>
                 {
                     b.Property<int>("TransactionId")
@@ -266,7 +296,7 @@ namespace Central_Hub.Data.Migrations
                     b.Property<decimal?>("AmountPaid")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("BatchId")
+                    b.Property<int>("ClientInstanceId")
                         .HasColumnType("int");
 
                     b.Property<int>("CompanyId")
@@ -282,10 +312,12 @@ namespace Central_Hub.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("ReferenceNumber")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("datetime2");
@@ -295,7 +327,7 @@ namespace Central_Hub.Data.Migrations
 
                     b.HasKey("TransactionId");
 
-                    b.HasIndex("BatchId");
+                    b.HasIndex("ClientInstanceId");
 
                     b.HasIndex("CompanyId");
 
@@ -316,6 +348,9 @@ namespace Central_Hub.Data.Migrations
 
                     b.Property<string>("AssignedSalesRep")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ClientInstanceId")
+                        .HasColumnType("int");
 
                     b.Property<string>("CompanyName")
                         .IsRequired()
@@ -400,6 +435,8 @@ namespace Central_Hub.Data.Migrations
 
                     b.HasKey("DemoRequestId");
 
+                    b.HasIndex("ClientInstanceId");
+
                     b.HasIndex("Email");
 
                     b.HasIndex("Status");
@@ -417,6 +454,9 @@ namespace Central_Hub.Data.Migrations
 
                     b.Property<decimal>("AmountPaid")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ClientInstanceId")
+                        .HasColumnType("int");
 
                     b.Property<int>("CompanyId")
                         .HasColumnType("int");
@@ -450,9 +490,46 @@ namespace Central_Hub.Data.Migrations
 
                     b.HasKey("RenewalId");
 
+                    b.HasIndex("ClientInstanceId");
+
                     b.HasIndex("CompanyId");
 
                     b.ToTable("LicenseRenewals");
+                });
+
+            modelBuilder.Entity("Central_Hub.Models.SyncLog", b =>
+                {
+                    b.Property<int>("SyncLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SyncLogId"));
+
+                    b.Property<int>("ClientInstanceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("SyncDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SyncType")
+                        .HasColumnType("int");
+
+                    b.HasKey("SyncLogId");
+
+                    b.HasIndex("ClientInstanceId");
+
+                    b.ToTable("SyncLog");
                 });
 
             modelBuilder.Entity("Central_Hub.Models.Users", b =>
@@ -698,33 +775,13 @@ namespace Central_Hub.Data.Migrations
                     b.Navigation("Company");
                 });
 
-            modelBuilder.Entity("Central_Hub.Models.CreditBatch", b =>
-                {
-                    b.HasOne("Central_Hub.Models.ClientCompany", "Company")
-                        .WithMany("CreditBatches")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Company");
-                });
-
-            modelBuilder.Entity("Central_Hub.Models.CreditRequest", b =>
-                {
-                    b.HasOne("Central_Hub.Models.ClientCompany", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Company");
-                });
-
             modelBuilder.Entity("Central_Hub.Models.CreditTransaction", b =>
                 {
-                    b.HasOne("Central_Hub.Models.CreditBatch", "Batch")
-                        .WithMany("Transactions")
-                        .HasForeignKey("BatchId");
+                    b.HasOne("Central_Hub.Models.ClientInstance", "ClientInstance")
+                        .WithMany("CreditTransactions")
+                        .HasForeignKey("ClientInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Central_Hub.Models.ClientCompany", "Company")
                         .WithMany("CreditTransactions")
@@ -732,20 +789,48 @@ namespace Central_Hub.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Batch");
+                    b.Navigation("ClientInstance");
 
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("Central_Hub.Models.DemoRequest", b =>
+                {
+                    b.HasOne("Central_Hub.Models.ClientInstance", "ClientInstance")
+                        .WithMany()
+                        .HasForeignKey("ClientInstanceId");
+
+                    b.Navigation("ClientInstance");
+                });
+
             modelBuilder.Entity("Central_Hub.Models.LicenseRenewal", b =>
                 {
+                    b.HasOne("Central_Hub.Models.ClientInstance", "ClientInstance")
+                        .WithMany("LicenseRenewals")
+                        .HasForeignKey("ClientInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Central_Hub.Models.ClientCompany", "Company")
                         .WithMany("LicenseRenewals")
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("ClientInstance");
+
                     b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("Central_Hub.Models.SyncLog", b =>
+                {
+                    b.HasOne("Central_Hub.Models.ClientInstance", "ClientInstance")
+                        .WithMany("SyncLogs")
+                        .HasForeignKey("ClientInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClientInstance");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -803,16 +888,18 @@ namespace Central_Hub.Data.Migrations
                 {
                     b.Navigation("Administrator");
 
-                    b.Navigation("CreditBatches");
-
                     b.Navigation("CreditTransactions");
 
                     b.Navigation("LicenseRenewals");
                 });
 
-            modelBuilder.Entity("Central_Hub.Models.CreditBatch", b =>
+            modelBuilder.Entity("Central_Hub.Models.ClientInstance", b =>
                 {
-                    b.Navigation("Transactions");
+                    b.Navigation("CreditTransactions");
+
+                    b.Navigation("LicenseRenewals");
+
+                    b.Navigation("SyncLogs");
                 });
 #pragma warning restore 612, 618
         }

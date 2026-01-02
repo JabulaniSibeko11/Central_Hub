@@ -1,4 +1,4 @@
-﻿namespace Central_Hub.Models
+﻿namespace Central_Hub.Models.ViewModels
 {
     public class DashboardViewModel
     {

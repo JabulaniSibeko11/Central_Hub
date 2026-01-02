@@ -32,7 +32,7 @@ namespace Central_Hub.Models
         public string? Details { get; set; }
 
         // Navigation Properties
-        public virtual ClientInstance? ClientInstance { get; set; }
+        //public virtual ClientInstance? ClientInstance { get; set; }
     }
 
     public enum SyncType

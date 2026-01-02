@@ -76,14 +76,14 @@ namespace Central_Hub.Models
         public LicenseStatus LicenseStatus { get; set; } = LicenseStatus.Trial;
 
         // Credit Information
-        [Display(Name = "Current Credit Balance")]
-        public int CurrentCreditBalance { get; set; } = 0;
+        //[Display(Name = "Current Credit Balance")]
+        //public int CurrentCreditBalance { get; set; } = 0;
 
-        [Display(Name = "Total Credits Purchased")]
-        public int TotalCreditsPurchased { get; set; } = 0;
+        //[Display(Name = "Total Credits Purchased")]
+        //public int TotalCreditsPurchased { get; set; } = 0;
 
-        [Display(Name = "Total Credits Used")]
-        public int TotalCreditsUsed { get; set; } = 0;
+        //[Display(Name = "Total Credits Used")]
+        //public int TotalCreditsUsed { get; set; } = 0;
 
         // Timestamps
         [Display(Name = "Created Date")]
@@ -97,8 +97,9 @@ namespace Central_Hub.Models
 
         // Navigation Properties
         public virtual CompanyAdministrator? Administrator { get; set; }
-        public virtual ICollection<CreditTransaction>? CreditTransactions { get; set; }
-        public virtual ICollection<LicenseRenewal>? LicenseRenewals { get; set; }
+        public virtual ICollection<CreditBatch> CreditBatches { get; set; } = new List<CreditBatch>();
+        public virtual ICollection<CreditTransaction> CreditTransactions { get; set; } = new List<CreditTransaction>();
+        public virtual ICollection<LicenseRenewal>? LicenseRenewals { get; set; } = new List<LicenseRenewal>();
 
         // Computed Properties
         [NotMapped]
@@ -140,21 +141,21 @@ namespace Central_Hub.Models
     public enum LicenseStatus
     {
         [Display(Name = "Trial")]
-        Trial,
+        Trial = 0,
 
         [Display(Name = "Active")]
-        Active,
+        Active = 1,
 
         [Display(Name = "Expiring Soon")]
-        ExpiringSoon,
+        ExpiringSoon = 2,
 
         [Display(Name = "Expired")]
-        Expired,
+        Expired = 3,
 
         [Display(Name = "Suspended")]
-        Suspended,
+        Suspended = 4,
 
         [Display(Name = "Cancelled")]
-        Cancelled
+        Cancelled = 5
     }
 }

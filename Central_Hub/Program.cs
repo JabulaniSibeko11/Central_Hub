@@ -1,4 +1,5 @@
 using Central_Hub.Data;
+using Central_Hub.Filter;
 using Central_Hub.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     .AddEntityFrameworkStores<Central_HubDbContext>();
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<CompanyAuthFilter>();
 
 // ? ADD THIS BEFORE builder.Build() - This was your main issue!
 builder.Services.AddAuthentication()

@@ -1,15 +1,23 @@
-﻿using Central_Hub.Data;
+﻿using System.ComponentModel;
+using System.ComponentModel.Design;
+using Central_Hub.Data;
+using Central_Hub.Filter;
 using Central_Hub.Models;
+using Central_Hub.Models.DTO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using static Azure.Core.HttpHeader;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Central_Hub.Controllers.Api
 {
 
-    [Route("api/[controller]")]
+    [Route("api/core")]
     [ApiController]
+    [ServiceFilter(typeof(CompanyAuthFilter))]
     public class LicenseApiController : ControllerBase
     {
         private readonly Central_HubDbContext _hubContext;
@@ -20,18 +28,58 @@ namespace Central_Hub.Controllers.Api
 
         }
 
-        [HttpGet("Validate/{LicenseKey}")]
+        // ----------- Test API ----------------//
+
+        [HttpGet("ping")]
+        public IActionResult Ping()
+        {
+            //API To Ping Central Hub using company Keys
+            var company = HttpContext.Items["Company"] as ClientCompany;
+
+            if (company == null)
+            {
+                return Unauthorized(new { Message = "Authentication failed: Company not found or inactive" });
+            }
+
+            return Ok(new
+            {
+                Message = "Pong",
+                CompanyId = company.CompanyId,  // Numeric ID
+                Name = company.CompanyName,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+
+        [HttpGet("health")]
+        public IActionResult Health()
+        {
+            //API To test the connectivity to Central Hub
+            return Ok(new
+            {
+                status = "healthy",
+                service = "Declarify Central Hub API",
+                timestamp = DateTime.UtcNow
+            });
+        }
+
+
+        // ----------- End of Test API ----------------//
+
+        // ----------- License Logic ----------------//
+
+
+
+
+        [HttpGet("validate/{LicenseKey}")]
+        [AllowAnonymous]  // ← THIS BYPASSES the CompanyAuthFilter completely for this action
         public async Task<IActionResult> ValidateLicense(string LicenseKey)
         {
-
             if (string.IsNullOrWhiteSpace(LicenseKey))
             {
-
                 return BadRequest(new { error = "License key is required" });
-
-
             }
-            var company = await _hubContext.ClientCompanies.FirstOrDefaultAsync(c => c.LicenseKey == LicenseKey);
+
+            var company = await _hubContext.ClientCompanies.FirstOrDefaultAsync(c => c.LicenseKey == LicenseKey.Trim());
 
             if (company == null)
             {
@@ -41,169 +89,214 @@ namespace Central_Hub.Controllers.Api
                     error = "Invalid license key"
                 });
             }
-            company.IsActive = true;
-            company.LastSyncDate = DateTime.UtcNow;
-            await _hubContext.SaveChangesAsync();
 
+            // Activate the company on first successful validation
+            if (!company.IsActive)
+            {
+                company.IsActive = true;
+                company.LastSyncDate = DateTime.UtcNow;
+                await _hubContext.SaveChangesAsync();
+            }
 
-            bool IsExpireds = company.LicenseExpiryDate < DateTime.UtcNow;
+            bool isExpired = company.LicenseExpiryDate != null && company.LicenseExpiryDate < DateTime.UtcNow;
+            int daysUntilExpiry = company.LicenseExpiryDate != null ? (company.LicenseExpiryDate - DateTime.UtcNow).Days : 0;
 
-            int daysUntilExpirys = (company.LicenseExpiryDate - DateTime.UtcNow).Days;
-
+            //Collect the admin
+            var adminUser = await _hubContext.CompanyAdministrators.FirstOrDefaultAsync(ad => ad.CompanyId == company.CompanyId);
 
             return Ok(new
             {
-                isValid = !IsExpireds,
-                LicenseKey = company.LicenseKey,
+                isValid = !isExpired,
+                companyId = company.CompanyId,
                 companyName = company.CompanyName,
                 emailDomain = company.EmailDomain,
-                licenseStatus = company.LicenseStatus,
                 expiryDate = company.LicenseExpiryDate,
-                daysUntilExpiry = daysUntilExpirys,
+                daysUntilExpiry = daysUntilExpiry,
+                isExpired = isExpired,
+                message = isExpired ? "License has expired" : "License valid and activated",
 
-                IsExpired = IsExpireds,
-                message = GetLicenseMessage(IsExpireds, daysUntilExpirys)
+                //Admin
+                FirstName = adminUser.FirstName,
+                Surname = adminUser.Surname,
+                Email = adminUser.Email,
+                PhoneNumber = adminUser.PhoneNumber,
+                JobTitle = adminUser.JobTitle,
+                Department = adminUser.Department
             });
         }
-        
 
-
-        [HttpGet("Credit/{licenseKey}")]
-        public async Task<IActionResult> GetCreditBalance(string licenseKey)
+        [HttpGet("check-license")]
+        public ActionResult<LicenseCheckResponse> CheckLicense()
         {
+            //API to check company license status
+            var company = HttpContext.Items["Company"] as ClientCompany;
 
-            var company = await _hubContext.ClientCompanies.FirstOrDefaultAsync(c => c.LicenseKey == licenseKey);
+           
+            if (company == null)
+                return StatusCode(500, new LicenseCheckResponse { IsValid = false, Message = "Internal error" });
+
+            bool isValid = company.IsActive && (company.LicenseExpiryDate == null || company.LicenseExpiryDate > DateTime.UtcNow);
+
+            var response = new LicenseCheckResponse
+            {
+                IsValid = isValid,
+                Message = isValid ? "License valid" : "License expired, inactive, or insufficient credits",
+                ExpiryDate = company.LicenseExpiryDate,
+                MaxUsers = company.EstimatedEmployeeCount ?? 0,
+                CompanyName = company.CompanyName
+            };
+
+            return Ok(response);
+        }
+
+        // ----------- End of License Logic ----------------//
+
+
+
+        // ----------- Credits Logic ----------------//
+
+        [HttpGet("check-credits")]
+        public async Task<IActionResult> GetCreditBalance()
+        {
+            //API to check company credits 
+            var company = HttpContext.Items["Company"] as ClientCompany;
+
             if (company == null)
             {
-                return NotFound(
-                new
-                {
-                    error = "Invalid license Key"
-                });
-
+                return Unauthorized(new { Message = "Authentication failed: Company not found or inactive" });
             }
-            return Ok(new
+
+            //Check the company batches
+            var now = DateTime.UtcNow;
+            var batches = _hubContext.CreditBatches.Where(b => b.CompanyId == company.CompanyId).ToList();
+
+            var availableCredits = batches.Where(b => b.ExpiryDate > now).Sum(b => b.RemainingAmount);
+
+            var response = new CreditCheckResponse
             {
-                licenseKey = company.LicenseKey,
-                companyName = company.CompanyName,
-                currentBalance = company.CurrentCreditBalance,
-                totalPurchased = company.TotalCreditsPurchased,
-                totalUsed = company.TotalCreditsUsed,
-                hasCredits = company.CurrentCreditBalance > 0,
-                lowCreditWarning = company.CurrentCreditBalance < 10
-            });
+                hasCredits = availableCredits > 0,
+                lowCreditWarning = availableCredits < 10,
+                currentBalance = availableCredits,
+                totalPurchased = batches.Sum(b => b.OriginalAmount),
+                totalUsed = batches.Sum(b => b.OriginalAmount - b.RemainingAmount)
+
+            };
+
+            return Ok(response);
         }
 
-        [HttpPost("consume-credits")]
-        public async Task<IActionResult> ConsumeCredits([FromBody] CreditConsumptionRequest request) {
+        [HttpPost("request-credits")]
+        public async Task<IActionResult> RequestCredits([FromBody] CreditRequestDto requestDto)
+        {
+            var company = HttpContext.Items["Company"] as ClientCompany;
+            if (company == null) return Unauthorized();
 
-            if (request == null || string.IsNullOrWhiteSpace(request.LicenseKey)) {
-
-                return BadRequest(new { error = "Invalid request" });
-
-            }
-
-            var company = await _hubContext.ClientCompanies.FirstOrDefaultAsync(c => c.LicenseKey == request.LicenseKey);
-
-            if (company == null) {
-                return NotFound(new { error = "Invalid license Key" });
-            }
-
-            if (company.LicenseExpiryDate < DateTime.UtcNow)
+            var request = new CreditRequest
             {
+                CompanyId = company.CompanyId,
+                RequestedCredits = requestDto.RequestedCredits,
+                Reason = requestDto.Reason
+            };
 
+            _hubContext.CreditRequests.Add(request);
+            await _hubContext.SaveChangesAsync();
+
+            // Then Send emails
+
+            return Ok(new { success = true, message = "Credit request sent successfully" });
+        }
+
+
+        [HttpPost("consume-credits")]
+        public async Task<IActionResult> ConsumeCredits([FromBody] CreditConsumptionRequest request)
+        {
+            //API to consume credits
+            if (request == null || request.CreditsToConsume <= 0)
+            {
+                return BadRequest(new { success = false, error = "Invalid request" });
+            }
+
+            //1. Is license active
+            var company = HttpContext.Items["Company"] as ClientCompany;
+
+            if (company == null)
+            {
+                return Unauthorized(new { Message = "Authentication failed: Company not found or inactive" });
+            }
+
+            if (!company.IsActive || company.LicenseExpiryDate < DateTime.UtcNow) return StatusCode(StatusCodes.Status403Forbidden, new { Message = "License Check failed: Company license expired or inactive" });
+
+            //2. Are credits enough?
+            var now = DateTime.UtcNow;
+
+            var batches = await _hubContext.CreditBatches.Where(b => b.CompanyId == company.CompanyId && b.ExpiryDate > now).OrderBy(b => b.LoadDate).ToListAsync();
+            int totalAvailable = batches.Sum(b => b.RemainingAmount);
+
+            if (totalAvailable < request.CreditsToConsume)
+            {
                 return BadRequest(new
                 {
                     success = false,
-                    error = "License expired"
-
-                });
-            }
-
-
-            if (company.CurrentCreditBalance < request.CreditsToConsume) {
-
-                return BadRequest(new {
-                    success = false,
                     error = "Insufficient credits",
-                    currentBalance = company.CurrentCreditBalance,
+                    currentBalance = totalAvailable,
                     requiredCredits = request.CreditsToConsume
                 });
-
             }
 
-            company.CurrentCreditBalance -= request.CreditsToConsume;
-            company.TotalCreditsUsed += request.CreditsToConsume;
-            company.LastModifiedDate = DateTime.UtcNow;
 
+            //3. Consume  from oldest batches [FIFO]
+            int remainingToConsume = request.CreditsToConsume;
+            var transactions = new List<CreditTransaction>();
+            string referenceNumber = $"SPEND-{DateTime.UtcNow.Ticks}";
+
+            foreach (var batch in batches)
+            {
+                if (remainingToConsume <= 0) break;
+
+                int deduct = Math.Min(remainingToConsume, batch.RemainingAmount);
+
+                // Update batch
+                batch.RemainingAmount -= deduct;
+
+                //4.Save transaction log
+                transactions.Add(new CreditTransaction
+                {
+                    CompanyId = company.CompanyId,
+                    BatchId = batch.BatchId,
+                    TransactionType = CreditTransactionType.Spend,
+                    CreditsAmount = deduct,
+                    TransactionDate = now,
+                    ReferenceNumber = referenceNumber,
+                    Notes = request.Reason ?? "Credits consumed via API",
+                    CreatedBy = "API"
+                });
+
+                remainingToConsume -= deduct;
+            }
+
+            //Save batch updates
+            company.LastModifiedDate = now;
+            _hubContext.CreditTransactions.AddRange(transactions);
             await _hubContext.SaveChangesAsync();
+
+
+            int newCreditBalance = await _hubContext.CreditBatches.Where(b => b.CompanyId == company.CompanyId && b.ExpiryDate > now).SumAsync(b => b.RemainingAmount);
+
 
             return Ok(new
             {
                 success = true,
                 creditsConsumed = request.CreditsToConsume,
-                remainingBalance = company.CurrentCreditBalance
+                remainingBalance = newCreditBalance
             });
         }
 
-        [HttpGet("sync/{licenseKey}")]
-        public async Task<IActionResult> Sync(string licenseKey) { 
         
-        
-        var company = await _hubContext.ClientCompanies
-                .Include(x=>x.Administrator)
-                .FirstOrDefaultAsync(c=>c.LicenseKey==licenseKey);
-
-            if (company == null) { return NotFound(new { error = "Invalid license key" }); };
-           
-                
-                company.LastSyncDate = DateTime.UtcNow;
-                await _hubContext.SaveChangesAsync();
-
-            bool isExpired = company.LicenseExpiryDate < DateTime.UtcNow;
-            int daysUntilExpiry = (company.LicenseExpiryDate - DateTime.UtcNow).Days;
-
-            return Ok(new
-            {
-                license = new
-                {
-                    key = company.LicenseKey,
-                    status = company.LicenseStatus.ToString(),
-                    isValid = !isExpired && company.IsActive,
-                    expiryDate = company.LicenseExpiryDate,
-                    daysUntilExpiry = daysUntilExpiry
-                },
-                company = new
-                {
-                    name = company.CompanyName,
-                    emailDomain = company.EmailDomain
-                },
-                administrator = company.Administrator != null ? new
-                {
-                    name = company.Administrator.FullName,
-                    email = company.Administrator.Email
-                } : null,
-                credits = new
-                {
-                    currentBalance = company.CurrentCreditBalance,
-                    totalPurchased = company.TotalCreditsPurchased,
-                    totalUsed = company.TotalCreditsUsed
-                }
-            });
-
-        }
 
 
-        [HttpGet("health")]
-        public IActionResult Health()
-        {
-            return Ok(new
-            {
-                status = "healthy",
-                service = "Declarify Central Hub API",
-                timestamp = DateTime.UtcNow
-            });
-        }
+        // ----------- End of Credits Logic ----------------//
+
+
 
         private string GetLicenseMessage(bool isExpired, int daysUntilExpiry)
         {

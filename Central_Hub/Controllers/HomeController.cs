@@ -1,5 +1,6 @@
 using Central_Hub.Data;
 using Central_Hub.Models;
+using Central_Hub.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -125,9 +126,35 @@ namespace Central_Hub.Controllers
             var CompletedDemos = await _db.DemoRequests.CountAsync(d => d.Status == DemoRequestStatus.Completed);
             var ConvertedDemos = await _db.DemoRequests.CountAsync(d => d.Status == DemoRequestStatus.Converted);
 
-            var TotalCreditsInCirculation = await _db.ClientCompanies.SumAsync(c => c.CurrentCreditBalance);
-             var TotalCreditsPurchased = await _db.ClientCompanies.SumAsync(c => c.TotalCreditsPurchased);
-            var TotalCreditsUsed = await _db.ClientCompanies.SumAsync(c => c.TotalCreditsUsed);
+            var TotalCreditsInCirculation = await _db.CreditBatches.Where(b => b.ExpiryDate > DateTime.UtcNow).SumAsync(b => b.RemainingAmount);
+            var TotalCreditsPurchased = await _db.CreditBatches.SumAsync(b => b.OriginalAmount);
+            var TotalCreditsUsed = await _db.CreditBatches.SumAsync(b => b.OriginalAmount - b.RemainingAmount);
+
+            var lowCreditCompanyIds = await _db.CreditBatches
+    .Where(b => b.RemainingAmount < 50 &&
+                b.RemainingAmount > 0 &&
+                b.ExpiryDate > DateTime.UtcNow)
+    .GroupBy(b => b.CompanyId)
+    .Select(g => new
+    {
+        CompanyId = g.Key,
+        TotalLowCredits = g.Sum(b => b.RemainingAmount)
+    })
+    .Where(g => g.TotalLowCredits < 50)
+    .OrderBy(g => g.TotalLowCredits)
+    .Select(g => g.CompanyId)
+    .ToListAsync();
+
+            // Step 2: Load full ClientCompany records for those IDs
+            // Step 2: Load full companies (no ordering here)
+            var LowCreditClients = await _db.ClientCompanies
+                .Where(c => lowCreditCompanyIds.Contains(c.CompanyId))
+                .ToListAsync();
+
+            // Step 3: Order in memory using the original ID list
+            LowCreditClients = LowCreditClients
+                .OrderBy(c => lowCreditCompanyIds.IndexOf(c.CompanyId))
+                .ToList();
 
 
             var model = new DashboardViewModel
@@ -169,10 +196,7 @@ namespace Central_Hub.Controllers
                .OrderBy(t=>t.LicenseExpiryDate)
                .ToListAsync(),
 
-                LowCreditClients= await _db.ClientCompanies
-                .Where(c=>c.CurrentCreditBalance<50 && c.CurrentCreditBalance>0)
-                .OrderBy(c=>c.CurrentCreditBalance)
-                .ToListAsync()
+                 LowCreditClients = LowCreditClients
 
 
             };
