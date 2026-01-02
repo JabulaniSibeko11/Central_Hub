@@ -33,6 +33,7 @@ namespace Central_Hub.Models
         [Display(Name = "City")]
         public string? City { get; set; }
 
+       
         [StringLength(100)]
         [Display(Name = "Province/Region")]
         public string? Province { get; set; }

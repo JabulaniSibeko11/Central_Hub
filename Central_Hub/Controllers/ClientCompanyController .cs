@@ -122,7 +122,7 @@ namespace Central_Hub.Controllers
                 company.LicenseExpiryDate = _LS.CalculateLicenseExpiryDate();
                 company.LicenseStatus = LicenseStatus.Trial;
                 company.CreatedDate = DateTime.UtcNow;
-                company.IsActive = true;
+                company.IsActive = false;
 
             company.Administrator = admin;
 

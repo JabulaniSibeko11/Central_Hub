@@ -1,0 +1,417 @@
+﻿@model Central_Hub.Models.DemoRequest
+@{
+    ViewData["Title"] = "Demo Request Details";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    
+    <!-- Include Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link href="~/css/managedemocss.css" rel="stylesheet" />
+</head>
+<body>
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="content-container">
+        <div class="breadcrumb">
+            <a href="@Url.Action("ManageDemoRequests")">← Back to Demo Requests</a>
+        </div>
+        <h1>Demo Request Details</h1>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="content-container">
+    <!-- Success/Error Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            <span class="icon">✓</span>
+            <span>@TempData["SuccessMessage"]</span>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-error">
+            <span class="icon">⚠</span>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <!-- Status Card -->
+    <div class="status-card">
+        <div class="status-header">
+            <div>
+                <h2>@Model.CompanyName</h2>
+                <p style="color: var(--color-text-muted); margin: 0;">Request ID: #@Model.DemoRequestId</p>
+            </div>
+            <div>
+                @switch (Model.Status)
+                {
+                    case Central_Hub.Models.DemoRequestStatus.Pending:
+                        <span class="status-badge pending">
+                            <span class="icon">⏱</span>
+                            Pending
+                        </span>
+                        break;
+                    case Central_Hub.Models.DemoRequestStatus.Scheduled:
+                        <span class="status-badge scheduled">
+                            <span class="icon">📅</span>
+                            Scheduled
+                        </span>
+                        break;
+                    case Central_Hub.Models.DemoRequestStatus.Completed:
+                        <span class="status-badge completed">
+                            <span class="icon">✓</span>
+                            Completed
+                        </span>
+                        break;
+                    case Central_Hub.Models.DemoRequestStatus.Converted:
+                        <span class="status-badge converted">
+                            <span class="icon">⭐</span>
+                            Converted
+                        </span>
+                        break;
+                    case Central_Hub.Models.DemoRequestStatus.NotInterested:
+                        <span class="status-badge not-interested">
+                            <span class="icon">✕</span>
+                            Not Interested
+                        </span>
+                        break;
+                }
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            @if (!Model.ConvertedToClient)
+            {
+                <button onclick="openStatusModal()" class="btn-primary-custom">
+                    Update Status
+                </button>
+                @if (Model.Status == Central_Hub.Models.DemoRequestStatus.Completed)
+                {
+                    <button type="button" class="btn-success-custom" onclick="openConvertModal()">
+                        ⭐ Convert to Client
+                    </button>
+                }
+            }
+            else
+            {
+                <div class="alert alert-success" style="margin: 0; flex: 1;">
+                    <span class="icon">✓</span>
+                    <span>This demo request has been converted to a client</span>
+                </div>
+            }
+        </div>
+
+        <!-- Company Information -->
+        <h3>Company Information</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Company Name</div>
+                <div class="info-value primary">@Model.CompanyName</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Registration Number</div>
+                <div class="info-value">@Model.RegistrationNumber</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Organization Type</div>
+                <div class="info-value">@Model.OrganizationType</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Province</div>
+                <div class="info-value">@Model.Province</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Email Domain</div>
+                <div class="info-value">@Model.OrganizationEmailDomain</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Estimated Employees</div>
+                <div class="info-value">@Model.EstimatedEmployeeCount</div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <h3>Contact Person</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Name</div>
+                <div class="info-value primary">@Model.ContactPersonName</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Job Title</div>
+                <div class="info-value">@Model.JobTitle</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Department</div>
+                <div class="info-value">@Model.Department</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Email</div>
+                <div class="info-value">
+                    <a href="mailto:@Model.Email">@Model.Email</a>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Phone Number</div>
+                <div class="info-value">@Model.PhoneNumber</div>
+            </div>
+        </div>
+
+        <!-- Request Details -->
+        <h3>Request Details</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Request Date</div>
+                <div class="info-value">@Model.RequestDate.ToString("dddd, dd MMMM yyyy")</div>
+            </div>
+            @if (Model.DemoScheduledDate.HasValue)
+            {
+                <div class="info-item">
+                    <div class="info-label">Demo Scheduled Date</div>
+                    <div class="info-value">@Model.DemoScheduledDate.Value.ToString("dddd, dd MMMM yyyy")</div>
+                </div>
+            }
+            @if (Model.DemoCompletedDate.HasValue)
+            {
+                <div class="info-item">
+                    <div class="info-label">Demo Completed Date</div>
+                    <div class="info-value">@Model.DemoCompletedDate.Value.ToString("dddd, dd MMMM yyyy")</div>
+                </div>
+            }
+        </div>
+
+        <!-- Internal Notes -->
+        @if (!string.IsNullOrWhiteSpace(Model.InternalNotes))
+        {
+            <h3>Internal Notes</h3>
+            <div class="notes-section">
+                <p>@Model.InternalNotes</p>
+            </div>
+        }
+    </div>
+</div>
+    <div class="modal-overlay" id="statusModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div>
+                    <h2>
+                        <span class="modal-icon">📝</span>
+                        Update Status
+                    </h2>
+                    <p>Change the status and add notes</p>
+                </div>
+                <button class="modal-close" onclick="closeStatusModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="@Url.Action("UpdateDemoRequestStatus", new { id = Model.DemoRequestId })">
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="label-icon">📊</span>
+                            Status
+                        </label>
+                        <select id="status" name="status" class="form-select-modern" required>
+                            <option value="">Select Status...</option>
+                            <option value="@Central_Hub.Models.DemoRequestStatus.Pending">⏱ Pending</option>
+                            <option value="@Central_Hub.Models.DemoRequestStatus.Scheduled">📅 Scheduled</option>
+                            <option value="@Central_Hub.Models.DemoRequestStatus.Completed">✓ Completed</option>
+                            <option value="@Central_Hub.Models.DemoRequestStatus.NotInterested">✕ Not Interested</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="label-icon">📌</span>
+                            Internal Notes <span class="optional">(Optional)</span>
+                        </label>
+                        <textarea id="notes" name="notes" class="form-textarea-modern" placeholder="Add any internal notes about this demo request...">@Model.InternalNotes</textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-modal-primary">
+                            <span>💾</span>
+                            Update Status
+                        </button>
+                        <button type="button" onclick="closeStatusModal()" class="btn-modal-secondary">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Convert to Client Modal -->
+    <div class="modal-overlay" id="convertModal">
+        <div class="modal-container modal-container-large">
+            <div class="modal-header modal-header-gradient">
+                <div>
+                    <h2>
+                        <span class="modal-icon">⭐</span>
+                        Convert to Client
+                    </h2>
+                    <p>Create a new client account from this demo request</p>
+                </div>
+                <button class="modal-close" onclick="closeConvertModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="@Url.Action("ConvertToClient", new { id = Model.DemoRequestId })" id="convertForm">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Company Information Display -->
+                    <div class="company-highlight">
+                        <div class="company-icon-large">🏢</div>
+                        <div class="company-info">
+                            <div class="company-name">@Model.CompanyName</div>
+                            <div class="company-details">
+                                <span class="company-badge">📋 @Model.RegistrationNumber</span>
+                                <span class="company-badge">📧 @Model.OrganizationEmailDomain</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Details Section -->
+                    <div class="conversion-section">
+                        <h3 class="section-title">
+                            <span>🏢</span>
+                            Company Details
+                        </h3>
+                        <div class="info-row">
+                            <div class="info-col">
+                                <label>Organization Type</label>
+                                <div class="info-display">@Model.OrganizationType</div>
+                            </div>
+                            <div class="info-col">
+                                <label>Province</label>
+                                <div class="info-display">@Model.Province</div>
+                            </div>
+                            <div class="info-col">
+                                <label>Estimated Employees</label>
+                                <div class="info-display">@Model.EstimatedEmployeeCount</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Administrator Details Section -->
+                    <div class="conversion-section">
+                        <h3 class="section-title">
+                            <span>👤</span>
+                            Primary Administrator
+                        </h3>
+                        <div class="info-row">
+                            <div class="info-col full-width">
+                                <label>Full Name</label>
+                                <div class="info-display">@Model.ContactPersonName</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-col">
+                                <label>Email</label>
+                                <div class="info-display">@Model.Email</div>
+                            </div>
+                            <div class="info-col">
+                                <label>Phone</label>
+                                <div class="info-display">@Model.PhoneNumber</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-col">
+                                <label>Job Title</label>
+                                <div class="info-display">@Model.JobTitle</div>
+                            </div>
+                            <div class="info-col">
+                                <label>Department</label>
+                                <div class="info-display">@Model.Department</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Conversion Steps Info -->
+                    <div class="conversion-info-box">
+                        <div class="info-box-icon">✨</div>
+                        <div class="info-box-content">
+                            <h4>Conversion Process</h4>
+                            <p>This will create a new client company account with all the information above. The contact person will be set as the primary administrator, and the demo request will be marked as "Converted".</p>
+                        </div>
+                    </div>
+
+                    <!-- Submit Actions -->
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-modal-convert" id="convertBtn">
+                            <span>⭐</span>
+                            <span id="btnText">Convert to Client</span>
+                        </button>
+                        <button type="button" onclick="closeConvertModal()" class="btn-modal-secondary">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<script>
+    function openStatusModal() {
+        document.getElementById('statusModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function openConvertModal() {
+        document.getElementById('convertModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeStatusModal() {
+        document.getElementById('statusModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+
+     function closeconvertModal() {
+        document.getElementById('convertModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+         // Handle form submission with loading state
+        document.getElementById('convertForm')?.addEventListener('submit', function(e) {
+            const btn = document.getElementById('convertBtn');
+            const btnText = document.getElementById('btnText');
+
+            btn.disabled = true;
+            btn.classList.add('loading');
+            btnText.textContent = 'Converting...';
+        });
+
+    // Close modal when clicking outside
+    document.getElementById('statusModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeStatusModal();
+        }
+    });
+
+    document.getElementById('convertModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeconvertModal();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeStatusModal();
+        }
+    });
+</script>
+</body>
+</html>

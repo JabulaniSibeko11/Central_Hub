@@ -100,7 +100,7 @@ namespace Central_Hub.Controllers
             return View(request);
         }
 
-        [HttpGet]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateDemoRequestStatus(int id, DemoRequestStatus status, string notes)
         {

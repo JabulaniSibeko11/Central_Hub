@@ -41,7 +41,7 @@ namespace Central_Hub.Controllers.Api
                     error = "Invalid license key"
                 });
             }
-
+            company.IsActive = true;
             company.LastSyncDate = DateTime.UtcNow;
             await _hubContext.SaveChangesAsync();
 
@@ -65,6 +65,8 @@ namespace Central_Hub.Controllers.Api
                 message = GetLicenseMessage(IsExpireds, daysUntilExpirys)
             });
         }
+        
+
 
         [HttpGet("Credit/{licenseKey}")]
         public async Task<IActionResult> GetCreditBalance(string licenseKey)
