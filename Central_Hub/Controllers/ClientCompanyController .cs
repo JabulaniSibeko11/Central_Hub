@@ -79,7 +79,7 @@ namespace Central_Hub.Controllers
         }
 
         [HttpGet]
-        public IActionResult CreateFromDemo()
+        public IActionResult CreateFromDemo1()
         {
 
 
@@ -115,6 +115,94 @@ namespace Central_Hub.Controllers
             ViewBag.Administrator = admin;
             ViewBag.DemoRequestId = TempData["DemoRequestId"];
             return View();
+        }
+        [HttpGet]
+        public IActionResult CreateFromDemo()
+        {
+            var company = new ClientCompany
+            {
+                CompanyName = TempData["CompanyName"]?.ToString(),
+                RegistrationNumber = TempData["RegistrationNumber"]?.ToString(),
+                EmailDomain = TempData["EmailDomain"]?.ToString(),
+                Province = TempData["Province"]?.ToString()
+            };
+
+            if (int.TryParse(TempData["EstimatedEmployeeCount"]?.ToString(), out int empCount))
+                company.EstimatedEmployeeCount = empCount;
+
+            if (Enum.TryParse<CompanyType>(TempData["CompanyType"]?.ToString(), out var companyType))
+                company.CompanyType = companyType;
+
+            var admin = new CompanyAdministrator
+            {
+                FirstName = TempData["AdminFirstName"]?.ToString(),
+                Surname = TempData["AdminLastName"]?.ToString(),
+                Email = TempData["AdminEmail"]?.ToString(),
+                PhoneNumber = TempData["AdminPhone"]?.ToString(),
+                JobTitle = TempData["AdminJobTitle"]?.ToString(),
+                Department = TempData["AdminDepartment"]?.ToString()
+            };
+
+            var vm = new CreateFromDemoViewModel
+            {
+                Company = company,
+                Administrator = admin,
+                DemoRequestId = TempData["DemoRequestId"] as int?
+            };
+
+            return View(vm);
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFromDemo(CreateFromDemoViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var company = model.Company;
+            var admin = model.Administrator;
+
+            var existingCompany = await _Db.ClientCompanies
+                .FirstOrDefaultAsync(c => c.EmailDomain == company.EmailDomain);
+
+            if (existingCompany != null)
+            {
+                ModelState.AddModelError("Company.EmailDomain",
+                    "A company with this email domain already exists.");
+                return View(model);
+            }
+
+            company.LicenseKey = _LS.GenerateLicenseKey(company);
+            company.LicenseIssueDate = DateTime.UtcNow;
+            company.LicenseExpiryDate = _LS.CalculateLicenseExpiryDate();
+            company.LicenseStatus = LicenseStatus.Trial;
+            company.CreatedDate = DateTime.UtcNow;
+            company.IsActive = false;
+
+            company.Administrator = admin;
+
+            _Db.ClientCompanies.Add(company);
+            await _Db.SaveChangesAsync();
+
+            if (model.DemoRequestId.HasValue)
+            {
+                var demoRequest = await _Db.DemoRequests.FindAsync(model.DemoRequestId.Value);
+                if (demoRequest != null)
+                {
+                    demoRequest.ConvertedToClient = true;
+                    demoRequest.ConversionDate = DateTime.UtcNow;
+                    demoRequest.ConvertedCompanyId = company.CompanyId;
+                    demoRequest.Status = DemoRequestStatus.Converted;
+                    await _Db.SaveChangesAsync();
+                }
+            }
+
+            TempData["SuccessMessage"] =
+                $"Client company created successfully. License Key: {company.LicenseKey}";
+
+            return RedirectToAction(nameof(Details), new { id = company.CompanyId });
         }
 
 
@@ -264,6 +352,8 @@ namespace Central_Hub.Controllers
             {
                 return NotFound();
             }
+            var now = DateTime.UtcNow;
+            var newExpiryDate = CalculateNextFebruaryExpiry(now);
             var renewal = new LicenseRenewal
             {
                 CompanyId = companyId,
@@ -275,7 +365,7 @@ namespace Central_Hub.Controllers
                 Notes = notes
             };
 
-            company.LicenseExpiryDate = renewal.NewExpiryDate;
+            company.LicenseExpiryDate = newExpiryDate;
             company.LicenseStatus = LicenseStatus.Active;
             company.LastModifiedDate = DateTime.UtcNow;
 
@@ -286,6 +376,18 @@ namespace Central_Hub.Controllers
 
             TempData["SuccessMessage"] = $"License renewed successfully until {renewal.NewExpiryDate:dd MMMM yyyy}.";
             return RedirectToAction(nameof(Details), new { id = companyId });
+        }
+        private DateTime CalculateNextFebruaryExpiry(DateTime currentExpiry)
+        {
+            // Current expiry is already Feb 1 of some year
+            return new DateTime(
+                currentExpiry.Year + 1,
+                2,
+                1,
+                0,
+                0,
+                0,
+                DateTimeKind.Utc);
         }
 
         [HttpPost]
