@@ -193,9 +193,13 @@ namespace Central_Hub.Controllers.Api
 
             var request = new CreditRequest
             {
+                RequestReference =  $"CR-{DateTime.UtcNow.Ticks}",
                 CompanyId = company.CompanyId,
                 RequestedCredits = requestDto.RequestedCredits,
-                Reason = requestDto.Reason
+                Reason = requestDto.Reason,
+                RequestedBy = requestDto.RequestedBy,
+                RequesterEmail = requestDto.RequesterEmail,
+                Status = CreditRequestStatus.Pending,
             };
 
             _hubContext.CreditRequests.Add(request);
@@ -204,6 +208,33 @@ namespace Central_Hub.Controllers.Api
             // Then Send emails
 
             return Ok(new { success = true, message = "Credit request sent successfully" });
+        }
+
+        [HttpGet("check-credits-requests")]
+        public async Task<IActionResult> GetCreditsRequests()
+        {
+            //API to check company credits 
+            var company = HttpContext.Items["Company"] as ClientCompany;
+
+            if (company == null)
+            {
+                return Unauthorized(new { Message = "Authentication failed: Company not found or inactive" });
+            }
+
+            var requests = await _hubContext.CreditRequests.Where(cr => cr.CompanyId == company.CompanyId).Select(cr => new CreditRequestResponse{
+               RequestId = cr.RequestId,
+               RequestReference = cr.RequestReference,
+               RequestedCredits = cr.RequestedCredits,
+               RequestDate = cr.RequestDate,
+               Status = cr.Status.ToString(),
+               ProcessedBy = cr.ProcessedBy,
+               ProcessedDate = cr.ProcessedDate,
+               Notes = cr.Notes,
+               RequestedBy = cr.RequestedBy
+            }).OrderByDescending(r => r.RequestDate).ToListAsync(); ;
+
+            return Ok(requests);
+
         }
 
 

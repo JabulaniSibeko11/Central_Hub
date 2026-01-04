@@ -310,7 +310,8 @@ namespace Central_Hub.Controllers
                 OriginalAmount = creditAmount,
                 RemainingAmount = creditAmount,
                 LoadDate = now,
-                PurchaseReference = $"INV-{now:yyyyMMdd}-{company.CompanyId}",
+                //PurchaseReference = $"INV-{now:yyyyMMdd}-{company.CompanyId}",
+                PurchaseReference = $"INV-{now.Ticks:yyyyMMdd}-{company.CompanyId}",
                 Notes = notes
             };
 

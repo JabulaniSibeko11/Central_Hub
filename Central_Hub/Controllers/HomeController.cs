@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Security.Claims;
+using Azure.Core;
 using Central_Hub.Data;
 using Central_Hub.Models;
 using Central_Hub.Models.ViewModels;
@@ -6,8 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
-using System.Diagnostics;
-using System.Security.Claims;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Central_Hub.Controllers
 {
@@ -114,7 +116,7 @@ namespace Central_Hub.Controllers
         {
             var userEmail = User.Identity.Name;
 
-            ViewBag.UserEmail = userEmail;  
+            ViewBag.UserEmail = userEmail;
 
 
             var activeClient = await _db.ClientCompanies.CountAsync(c => c.LicenseStatus == LicenseStatus.Active);
@@ -122,7 +124,7 @@ namespace Central_Hub.Controllers
             var ExpiredClients = await _db.ClientCompanies.CountAsync(c => c.LicenseStatus == LicenseStatus.Expired);
             var ExpiringSoonClients = await _db.ClientCompanies.CountAsync(c => c.LicenseStatus == LicenseStatus.ExpiringSoon);
             var PendingDemoRequests = await _db.DemoRequests.CountAsync(d => d.Status == DemoRequestStatus.Pending);
-           var  ScheduledDemos = await _db.DemoRequests.CountAsync(d => d.Status == DemoRequestStatus.Scheduled);
+            var ScheduledDemos = await _db.DemoRequests.CountAsync(d => d.Status == DemoRequestStatus.Scheduled);
             var CompletedDemos = await _db.DemoRequests.CountAsync(d => d.Status == DemoRequestStatus.Completed);
             var ConvertedDemos = await _db.DemoRequests.CountAsync(d => d.Status == DemoRequestStatus.Converted);
 
@@ -177,26 +179,26 @@ namespace Central_Hub.Controllers
                 MonthlyRevenue = await CalculateMonthlyRevenue(),
                 YearlyRevenue = await CalclateYearlyRevenue(),
 
-                RecentClients= await _db.ClientCompanies
-                .Include(c=>c.Administrator)
-                .OrderByDescending(c=>c.CreatedDate).Take(5).ToListAsync(),
+                RecentClients = await _db.ClientCompanies
+                .Include(c => c.Administrator)
+                .OrderByDescending(c => c.CreatedDate).Take(5).ToListAsync(),
 
-                RecentDemoRequests= await _db.DemoRequests
-                .OrderByDescending(d=>d.RequestDate)
+                RecentDemoRequests = await _db.DemoRequests
+                .OrderByDescending(d => d.RequestDate)
                 .Take(5).ToListAsync(),
 
                 RecentCreditTransactions = await _db.CreditTransactions
-                .Include(t=>t.Company)
-                .OrderByDescending(t=>t.TransactionDate)
+                .Include(t => t.Company)
+                .OrderByDescending(t => t.TransactionDate)
                 .Take(10).ToListAsync(),
 
-                ExpiringLicenses= await _db.ClientCompanies
-               .Where(c=>c.LicenseExpiryDate<DateTime.UtcNow.AddDays(30)
-               && c.LicenseExpiryDate>DateTime.UtcNow)
-               .OrderBy(t=>t.LicenseExpiryDate)
+                ExpiringLicenses = await _db.ClientCompanies
+               .Where(c => c.LicenseExpiryDate < DateTime.UtcNow.AddDays(30)
+               && c.LicenseExpiryDate > DateTime.UtcNow)
+               .OrderBy(t => t.LicenseExpiryDate)
                .ToListAsync(),
 
-                 LowCreditClients = LowCreditClients
+                LowCreditClients = LowCreditClients
 
 
             };
@@ -211,6 +213,79 @@ namespace Central_Hub.Controllers
 
             return View(model);
         }
+
+        public async Task<IActionResult> RequestedCredits()
+        {
+
+            var requests = await _db.CreditRequests.Include(c=> c.Company).OrderByDescending(cr => cr.RequestDate).ToListAsync();
+            return View(requests);
+
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ApproveRequest(int requestId, string notes)
+        {
+            var request = await _db.CreditRequests.FindAsync(requestId);
+            if (request != null)
+            {
+                request.Status = CreditRequestStatus.Approved;
+                request.ProcessedDate = DateTime.UtcNow;
+                request.ProcessedBy = User.Identity.Name ?? "Admin";
+                request.Notes = notes;
+                await _db.SaveChangesAsync();
+
+                var now = DateTime.UtcNow;
+                //Create a Batch
+                var newBatch = new CreditBatch
+                {
+                    CompanyId = request.CompanyId,
+                    OriginalAmount = request.RequestedCredits,
+                    RemainingAmount = request.RequestedCredits,
+                    LoadDate = now,
+                    PurchaseReference = request.RequestReference,
+                    Notes = notes
+                };
+
+                _db.CreditBatches.Add(newBatch);
+                await _db.SaveChangesAsync();
+
+                //Create transaction History
+                var transaction = new CreditTransaction
+                {
+                    CompanyId = request.CompanyId,
+                    BatchId = newBatch.BatchId,
+                    TransactionType = CreditTransactionType.Purchase,
+                    CreditsAmount = request.RequestedCredits,
+                    TransactionDate = now,
+                    ExpiryDate = newBatch.ExpiryDate,
+                    ReferenceNumber = newBatch.PurchaseReference,
+                    CreatedBy = "Admin",
+                    Notes = notes
+                };
+
+                _db.CreditTransactions.Add(transaction);
+                await _db.SaveChangesAsync();
+            }
+
+            return RedirectToAction("RequestedCredits");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RejectRequest(int requestId, string notes)
+        {
+            var request = await _db.CreditRequests.FindAsync(requestId);
+            if (request != null)
+            {
+                request.Status = CreditRequestStatus.Rejected;
+                request.ProcessedDate = DateTime.UtcNow;
+                request.ProcessedBy = User.Identity.Name ?? "Admin";
+                request.Notes = notes;
+                await _db.SaveChangesAsync();
+            }
+            return RedirectToAction("RequestedCredits");
+        }
+
+
         private async Task<decimal> CalculateMonthlyRevenue() {
             var firstdayOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
 

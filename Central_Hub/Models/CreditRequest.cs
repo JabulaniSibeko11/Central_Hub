@@ -12,6 +12,7 @@ namespace Central_Hub.Models
 
         [Required]
         public int RequestedCredits { get; set; }
+        public string RequestReference { get; set; }
 
         public string? Reason { get; set; }
 
@@ -25,7 +26,10 @@ namespace Central_Hub.Models
 
         public string? Notes { get; set; }
 
-        public decimal? AmountToPay { get; set; } 
+        public decimal? AmountToPay { get; set; }
+
+        public string RequestedBy { get; set; }
+        public string RequesterEmail { get; set; }
 
         // Navigation
         public virtual ClientCompany Company { get; set; } = null!;
@@ -44,4 +48,7 @@ public class CreditRequestDto
 {
     public int RequestedCredits { get; set; }
     public string? Reason { get; set; }
+
+    public string RequestedBy { get; set; }
+    public string? RequesterEmail { get; set; }
 }
