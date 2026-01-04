@@ -343,7 +343,7 @@ namespace Central_Hub.Controllers.Api
             {
                 CompanyName = company.CompanyName,
                 CompanyRegistration = company.RegistrationNumber,
-                Industry = company.EmailDomain,
+                Domain = company.EmailDomain,
                 RegisteredDate = company.CreatedDate
             };
 
