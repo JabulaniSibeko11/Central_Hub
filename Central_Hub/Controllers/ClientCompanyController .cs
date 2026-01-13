@@ -46,6 +46,7 @@ namespace Central_Hub.Controllers
                 .Include(c => c.Administrator)
                 .Include(c => c.CreditTransactions)
                 .Include(c => c.LicenseRenewals)
+                .Include(c => c.CreditBatches)
                 .FirstOrDefaultAsync(c => c.CompanyId == id);
 
             if (company == null)
@@ -64,6 +65,8 @@ namespace Central_Hub.Controllers
 
             var totalUsed = company.CreditBatches
                 .Sum(b => b.OriginalAmount - b.RemainingAmount);
+
+
 
 
             var viewModel = new CompanyDetailsViewModel
