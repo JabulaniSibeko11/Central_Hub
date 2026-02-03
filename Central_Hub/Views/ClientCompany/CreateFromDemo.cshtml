@@ -122,14 +122,23 @@
                                 Organization Type
                                 <span class="required-indicator">*</span>
                             </label>
-                            <select asp-for="Company.CompanyType" class="form-select @(Model?.Company.CompanyType != null ? "prefilled" : "")" required>
+                            <select asp-for="Company.CompanyType"
+                                    class="form-select @(Model?.Company.CompanyType != null ? "prefilled" : "")"
+                                    required>
                                 <option value="">Select organization type</option>
-                                <option value="Municipality">Municipality</option>
-                                <option value="GovernmentDepartment">Government Department</option>
-                                <option value="StateOwnedEntity">State-Owned Entity</option>
+
+                                <option value="NationalGovernment">National Government</option>
+                                <option value="ProvincialGovernment">Provincial Government</option>
+
+                                <option value="MunicipalityMetro">Municipality - Metro</option>
+                                <option value="MunicipalityLocal">Municipality - Local</option>
+                                <option value="MunicipalityDistrict">Municipality - District</option>
+
+                                <option value="StateOwnedEnterprise">State-Owned Enterprise</option>
                                 <option value="PublicEntity">Public Entity</option>
-                                <option value="PrivateSector">Private Sector</option>
+                                <option value="OtherPublicSector">Other Public Sector</option>
                             </select>
+
                             <span asp-validation-for="Company.CompanyType" class="validation-message"></span>
                         </div>
 

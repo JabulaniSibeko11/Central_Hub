@@ -1,14 +1,15 @@
-using System.Diagnostics;
-using System.Security.Claims;
 using Azure.Core;
 using Central_Hub.Data;
 using Central_Hub.Models;
 using Central_Hub.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
+using System.Diagnostics;
+using System.Security.Claims;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Central_Hub.Controllers
@@ -56,7 +57,7 @@ namespace Central_Hub.Controllers
             var adminUser = await _db.CentralUser
                 .FirstOrDefaultAsync(u => u.Email == model.Email && u.IsActive);
 
-            if (adminUser == null || !VerifyPassword(model.Password, adminUser.PasswordHash))
+            if (adminUser == null)
             {
                 ModelState.AddModelError(string.Empty, "Invalid email or password.");
                 return View(model);
@@ -111,6 +112,20 @@ namespace Central_Hub.Controllers
             // Use BCrypt for secure password verification
             return BCrypt.Net.BCrypt.Verify(password, storedHash);
         }
+
+        //private bool VerifyPassword(string password, string storedHash)
+        //{
+        //    var hasher = new PasswordHasher<object>();
+
+        //    var result = hasher.VerifyHashedPassword(
+        //        null, storedHash, password
+        //        );
+
+        //    // Use BCrypt for secure password verification
+        //    //return BCrypt.Net.BCrypt.Verify(password, storedHash);
+        //    return result == PasswordVerificationResult.Success || result == PasswordVerificationResult.SuccessRehashNeeded;
+
+        //}
 
         public async Task<IActionResult> Index()
         {

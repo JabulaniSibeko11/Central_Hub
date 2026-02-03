@@ -161,8 +161,8 @@ namespace Central_Hub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateFromDemo(CreateFromDemoViewModel model)
         {
-            if (!ModelState.IsValid)
-                return View(model);
+            //if (!ModelState.IsValid)
+            //    return View(model);
 
             var company = model.Company;
             var admin = model.Administrator;
