@@ -240,34 +240,73 @@
                         <p class="action-card-subtitle">Purchase additional credits for this client</p>
                     </div>
 
-                    <form asp-action="AddCredit" method="post">
+                    <form asp-action="AddCredit"
+                          asp-controller="ClientCompany"
+                          method="post"
+                          enctype="multipart/form-data">
+
                         @Html.AntiForgeryToken()
+
                         <input type="hidden" name="companyId" value="@Model.Company.CompanyId" />
 
-                        <div class="form-group">
-                            <label class="form-label">Number of Credits</label>
-                            <input type="number" name="creditAmount" class="form-control" min="1" placeholder="e.g., 100" required />
+                        <!-- ✅ Invoice number (disabled) + hidden copy (posted) -->
+                        <div class="mb-3">
+                            <label class="form-label" style="color:white;">Invoice Number</label>
+                            <input type="text"
+                                   class="form-control"
+                                   value="@Model.NextCreditPurchaseReference"
+                                   disabled />
+
+                            <!-- hidden value that will be submitted -->
+                            <input type="hidden"
+                                   name="purchaseReference"
+                                   value="@Model.NextCreditPurchaseReference" />
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Amount Paid (ZAR)</label>
-                            <input type="number" name="amountPaid" class="form-control" step="0.01" min="0" placeholder="e.g., 5000.00" required />
+                        <div class="mb-3">
+                            <label class="form-label" style="color:white;">Credit Amount</label>
+                            <input type="number"
+                                   class="form-control"
+                                   name="creditAmount"
+                                   min="1"
+                                   required />
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Notes (Optional)</label>
-                            <textarea name="notes" class="form-control" rows="2" placeholder="e.g., Bulk purchase discount applied"></textarea>
+                        <div class="mb-3">
+                            <label class="form-label" style="color:white;">Amount Paid</label>
+                            <input type="number"
+                                   class="form-control"
+                                   name="amountPaid"
+                                   step="0.01"
+                                   min="0"
+                                   required />
                         </div>
 
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="16"></line>
-                                <line x1="8" y1="12" x2="16" y2="12"></line>
-                            </svg>
-                            Add Credits
+                        <div class="mb-3">
+                            <label class="form-label" style="color:white;">Notes</label>
+                            <textarea class="form-control"
+                                      name="notes"
+                                      rows="3"></textarea>
+                        </div>
+
+                        <!-- ✅ Attachment required -->
+                        <div class="mb-3">
+                            <label class="form-label" style="color:white;">Invoice Attachment (PDF)</label>
+                            <input type="file"
+                                   class="form-control"
+                                   name="attachment"
+                                   accept="application/pdf"
+                                   required />
+                            <small class="text-muted">
+                                Upload the invoice PDF. Credit will NOT be added without this attachment.
+                            </small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            Add Credit
                         </button>
                     </form>
+
                 </div>
 
                 <!-- Renew License -->

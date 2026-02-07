@@ -1,10 +1,11 @@
-﻿using System.Security.Policy;
-using Central_Hub.Data;
+﻿using Central_Hub.Data;
 using Central_Hub.Models;
 using Central_Hub.Models.ViewModels;
 using Central_Hub.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Policy;
+using System.Text.RegularExpressions;
 
 namespace Central_Hub.Controllers
 {
@@ -37,9 +38,46 @@ namespace Central_Hub.Controllers
             ViewBag.SelectedStatus = status;
             return View(companies);
         }
-
         [HttpGet]
         public async Task<IActionResult> Details(int id)
+        {
+            var company = await _Db.ClientCompanies
+                .Include(c => c.Administrator)
+                .Include(c => c.CreditTransactions)
+                .Include(c => c.LicenseRenewals)
+                .Include(c => c.CreditBatches)
+                .FirstOrDefaultAsync(c => c.CompanyId == id);
+
+            if (company == null)
+                return NotFound();
+
+            var now = DateTime.UtcNow;
+
+            var availableCredits = company.CreditBatches
+                .Where(b => b.ExpiryDate > now)
+                .Sum(b => b.RemainingAmount);
+
+            var totalPurchased = company.CreditBatches.Sum(b => b.OriginalAmount);
+            var totalUsed = company.CreditBatches.Sum(b => b.OriginalAmount - b.RemainingAmount);
+
+            var vm = new CompanyDetailsViewModel
+            {
+                Company = company,
+                AvailableCredits = availableCredits,
+                TotalCreditsPurchased = totalPurchased,
+                TotalCreditsUsed = totalUsed,
+
+                // ✅ show this on the Add Credit form (disabled)
+                NextCreditPurchaseReference = GenerateCreditInvoiceNo(company.CompanyId)
+            };
+
+            return View(vm);
+        }
+
+
+
+        [HttpGet]
+        public async Task<IActionResult> Details1(int id)
         {
 
             var company = await _Db.ClientCompanies
@@ -289,7 +327,122 @@ namespace Central_Hub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddCredit(int companyId, int creditAmount, decimal amountPaid, string notes)
+        public async Task<IActionResult> AddCredit(
+    int companyId,
+    int creditAmount,
+    decimal amountPaid,
+    string? notes,
+    string? purchaseReference,  // posted from hidden, but we won't trust it
+    IFormFile? attachment,
+    CancellationToken ct)
+        {
+            if (creditAmount <= 0)
+            {
+                TempData["ErrorMessage"] = "Credit amount must be greater than zero.";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+
+            // ✅ Must have attachment
+            if (attachment == null || attachment.Length == 0)
+            {
+                TempData["ErrorMessage"] = "Please upload the invoice attachment (PDF) before adding credit.";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+
+            // ✅ Only allow PDF (basic check)
+            var ext = Path.GetExtension(attachment.FileName);
+            if (!string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "Invoice attachment must be a PDF file.";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+
+            var company = await _Db.ClientCompanies.FindAsync(new object[] { companyId }, ct);
+            if (company == null)
+                return NotFound();
+
+            var now = DateTime.UtcNow;
+
+            // ✅ Generate invoice number server-side (don’t trust hidden input)
+            var invoiceNo = GenerateCreditInvoiceNo(company.CompanyId);
+
+            // ✅ Build folder + filename
+            var safeCompanyName = SafeFolderName(company.CompanyName);
+            var baseDir = @"C:\Inspired IT Central Hub";
+            var creditsDir = Path.Combine(baseDir, safeCompanyName, "Credits");
+            Directory.CreateDirectory(creditsDir);
+
+            var fileName = $"{invoiceNo}_{safeCompanyName}.pdf";
+            var fullPath = Path.Combine(creditsDir, fileName);
+            fullPath = EnsureUniqueFilePath(fullPath);
+
+            // ✅ Save file first (so we don’t create DB rows if file write fails)
+            try
+            {
+                await using var stream = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                await attachment.CopyToAsync(stream, ct);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TempData["ErrorMessage"] =
+                    "Server does not have permission to save the invoice file. Please grant write access to: C:\\Inspired IT Central Hub";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+            catch (IOException ex)
+            {
+                TempData["ErrorMessage"] = $"Failed to save invoice file. {ex.Message}";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+
+            // 1) Create credit batch
+            var newBatch = new CreditBatch
+            {
+                CompanyId = company.CompanyId,
+                OriginalAmount = creditAmount,
+                RemainingAmount = creditAmount,
+                LoadDate = now,
+                PurchaseReference = invoiceNo,
+                Notes = notes,
+
+                // ✅ NEW columns
+                FileName = Path.GetFileName(fullPath),
+                FilePath = fullPath
+            };
+
+            _Db.CreditBatches.Add(newBatch);
+            await _Db.SaveChangesAsync(ct); // ensures BatchId exists
+
+            // 2) Audit transaction
+            var transaction = new CreditTransaction
+            {
+                CompanyId = company.CompanyId,
+                BatchId = newBatch.BatchId,
+                TransactionType = CreditTransactionType.Purchase,
+                CreditsAmount = creditAmount,
+                AmountPaid = amountPaid,
+                TransactionDate = now,
+                ExpiryDate = newBatch.ExpiryDate,
+                ReferenceNumber = newBatch.PurchaseReference,
+                CreatedBy = "Admin",
+                Notes = notes
+            };
+
+            _Db.CreditTransactions.Add(transaction);
+
+            company.LastModifiedDate = now;
+
+            await _Db.SaveChangesAsync(ct);
+
+            TempData["SuccessMessage"] =
+                $"Successfully added {creditAmount} credits to {company.CompanyName}. Invoice: {invoiceNo}";
+
+            return RedirectToAction(nameof(Details), new { id = companyId });
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddCredit1(int companyId, int creditAmount, decimal amountPaid, string notes)
         {
             if (creditAmount <= 0)
             {
@@ -449,6 +602,41 @@ namespace Central_Hub.Controllers
             await _Db.SaveChangesAsync();
 
             return RedirectToAction("CreditRequests");
+        }
+        private static string GenerateCreditInvoiceNo(int companyId)
+        {
+            // Example: INV-20260204-143355-123-7F2A
+            var now = DateTime.UtcNow;
+            var rand = Guid.NewGuid().ToString("N")[..4].ToUpperInvariant();
+            return $"INV-{now:yyyyMMdd-HHmmss}-{companyId}-{rand}";
+        }
+        private static string SafeFolderName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return "Company";
+            var invalid = Path.GetInvalidFileNameChars();
+            var cleaned = new string(name.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray());
+            cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim();
+            return cleaned.Length > 80 ? cleaned[..80] : cleaned;
+        }
+
+        private static string EnsureUniqueFilePath(string fullPath)
+        {
+            if (!System.IO.File.Exists(fullPath))
+                return fullPath;
+
+            var dir = Path.GetDirectoryName(fullPath)!;
+            var name = Path.GetFileNameWithoutExtension(fullPath);
+            var ext = Path.GetExtension(fullPath);
+
+            for (int i = 2; i < 10_000; i++)
+            {
+                var candidate = Path.Combine(dir, $"{name} ({i}){ext}");
+                if (!System.IO.File.Exists(candidate))
+                    return candidate;
+            }
+
+            // Extremely unlikely, but safe fallback
+            return Path.Combine(dir, $"{name}_{Guid.NewGuid():N}{ext}");
         }
     }
 }

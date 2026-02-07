@@ -6,5 +6,7 @@
         public int AvailableCredits { get; set; }
         public int TotalCreditsPurchased { get; set; }
         public int TotalCreditsUsed { get; set; }
+        // ✅ NEW: pre-generated invoice number for Add Credit form
+        public string NextCreditPurchaseReference { get; set; } = "";
     }
 }

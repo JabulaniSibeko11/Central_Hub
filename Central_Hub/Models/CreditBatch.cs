@@ -24,6 +24,10 @@ namespace Central_Hub.Models
         public string? PurchaseReference { get; set; } 
         public string? Notes { get; set; }
 
+        // ✅ NEW: invoice attachment info
+        public string? FileName { get; set; }
+        public string? FilePath { get; set; }
+
         // Navigation
         public virtual ClientCompany Company { get; set; } = null!;
         public virtual ICollection<CreditTransaction> Transactions { get; set; }
