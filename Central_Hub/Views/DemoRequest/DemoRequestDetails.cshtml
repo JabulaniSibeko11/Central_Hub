@@ -100,9 +100,13 @@
                 </button>
                 @if (Model.Status == Central_Hub.Models.DemoRequestStatus.Completed)
                 {
-                    <button type="button" class="btn-success-custom" onclick="openConvertModal()">
-                        ⭐ Convert to Client
-                    </button>
+                        <form method="post" action="@Url.Action("ConvertToClient", new { id = Model.DemoRequestId })" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-primary-custom" @(Model.ConvertedToClient ? "disabled" : "")>
+                                Convert to Client
+                            </button>
+                        </form>
+
                 }
             }
             else
@@ -256,113 +260,7 @@
     </div>
 
     <!-- Convert to Client Modal -->
-    <div class="modal-overlay" id="convertModal">
-        <div class="modal-container modal-container-large">
-            <div class="modal-header modal-header-gradient">
-                <div>
-                    <h2>
-                        <span class="modal-icon">⭐</span>
-                        Convert to Client
-                    </h2>
-                    <p>Create a new client account from this demo request</p>
-                </div>
-                <button class="modal-close" onclick="closeConvertModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <form method="post" action="@Url.Action("ConvertToClient", new { id = Model.DemoRequestId })" id="convertForm">
-                    @Html.AntiForgeryToken()
-
-                    <!-- Company Information Display -->
-                    <div class="company-highlight">
-                        <div class="company-icon-large">🏢</div>
-                        <div class="company-info">
-                            <div class="company-name">@Model.CompanyName</div>
-                            <div class="company-details">
-                                <span class="company-badge">📋 @Model.RegistrationNumber</span>
-                                <span class="company-badge">📧 @Model.OrganizationEmailDomain</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Company Details Section -->
-                    <div class="conversion-section">
-                        <h3 class="section-title">
-                            <span>🏢</span>
-                            Company Details
-                        </h3>
-                        <div class="info-row">
-                            <div class="info-col">
-                                <label>Organization Type</label>
-                                <div class="info-display">@Model.OrganizationType</div>
-                            </div>
-                            <div class="info-col">
-                                <label>Province</label>
-                                <div class="info-display">@Model.Province</div>
-                            </div>
-                            <div class="info-col">
-                                <label>Estimated Employees</label>
-                                <div class="info-display">@Model.EstimatedEmployeeCount</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Administrator Details Section -->
-                    <div class="conversion-section">
-                        <h3 class="section-title">
-                            <span>👤</span>
-                            Primary Administrator
-                        </h3>
-                        <div class="info-row">
-                            <div class="info-col full-width">
-                                <label>Full Name</label>
-                                <div class="info-display">@Model.ContactPersonName</div>
-                            </div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-col">
-                                <label>Email</label>
-                                <div class="info-display">@Model.Email</div>
-                            </div>
-                            <div class="info-col">
-                                <label>Phone</label>
-                                <div class="info-display">@Model.PhoneNumber</div>
-                            </div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-col">
-                                <label>Job Title</label>
-                                <div class="info-display">@Model.JobTitle</div>
-                            </div>
-                            <div class="info-col">
-                                <label>Department</label>
-                                <div class="info-display">@Model.Department</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Conversion Steps Info -->
-                    <div class="conversion-info-box">
-                        <div class="info-box-icon">✨</div>
-                        <div class="info-box-content">
-                            <h4>Conversion Process</h4>
-                            <p>This will create a new client company account with all the information above. The contact person will be set as the primary administrator, and the demo request will be marked as "Converted".</p>
-                        </div>
-                    </div>
-
-                    <!-- Submit Actions -->
-                    <div class="modal-actions">
-                        <button type="submit" class="btn-modal-convert" id="convertBtn">
-                            <span>⭐</span>
-                            <span id="btnText">Convert to Client</span>
-                        </button>
-                        <button type="button" onclick="closeConvertModal()" class="btn-modal-secondary">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+   
 
 <script>
     function openStatusModal() {

@@ -272,14 +272,26 @@
                                    required />
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label" style="color:white;">Amount Paid</label>
-                            <input type="number"
-                                   class="form-control"
-                                   name="amountPaid"
-                                   step="0.01"
-                                   min="0"
-                                   required />
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label" style="color:white;">Amount Paid</label>
+                                <input type="number"
+                                       class="form-control"
+                                       name="amountPaid"
+                                       step="0.01"
+                                       min="0"
+                                       required />
+                            </div>
+
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label" style="color:white;">Payment Reference</label>
+                                <input type="text"
+                                       class="form-control"
+                                       value="@Model.Company.PaymentReference"
+                                       readonly />
+                                <!-- optional hidden (not required, server will use Model.Company.PaymentReference anyway) -->
+                                <input type="hidden" name="paymentReference" value="@Model.Company.PaymentReference" />
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -319,33 +331,93 @@
                         </p>
                     </div>
 
-                    <form asp-action="RenewLicense" method="post">
+                    <form asp-action="RenewLicense" method="post" enctype="multipart/form-data">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="companyId" value="@Model.Company.CompanyId" />
 
+                        @{
+                            // Display value (user sees it)
+                            var licDisplayNo = $"LIC-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Model.Company.CompanyId}-{Guid.NewGuid().ToString("N")[..4].ToUpperInvariant()}_{Model.Company.CompanyName}";
+
+                            // Hidden value (posted) - controller will still generate server-side
+                            var licHiddenNo = $"LIC-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Model.Company.CompanyId}-{Guid.NewGuid().ToString("N")[..4].ToUpperInvariant()}";
+                        }
+
+                        <!-- ✅ License Invoice No (disabled + hidden) -->
                         <div class="form-group">
-                            <label class="form-label">Amount Paid (ZAR)</label>
-                            <input type="number" name="amountPaid" class="form-control" step="0.01" min="0" placeholder="e.g., 12000.00" required />
+                            <label class="form-label">License Invoice Number</label>
+                            <input type="text" class="form-control" value="@licDisplayNo" disabled />
+                            <input type="hidden" name="invoiceNumber" value="@licHiddenNo" />
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Payment Reference</label>
-                            <input type="text" name="paymentReference" class="form-control" placeholder="e.g., EFT123456" required />
+                        <!-- ✅ Amount Paid + Payment Reference on same line -->
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">Amount Paid (ZAR)</label>
+                                <input type="number"
+                                       name="amountPaid"
+                                       class="form-control"
+                                       step="0.01"
+                                       min="0"
+                                       placeholder="e.g., 12000.00"
+                                       required />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Payment Method</label>
+                                <select name="paymentMethod" class="form-control" required>
+                                    <option value="">Select Payment Method</option>
+                                    <option value="EFT">EFT</option>
+                                    <option value="Bank Deposit">Bank Deposit</option>
+                                    <option value="Card">Card</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">Payment Reference</label>
+                                <input type="text"
+                                       class="form-control"
+                                       value="@Model.Company.PaymentReference"
+                                       readonly />
+
+                                <!-- optional hidden (controller will still use company.PaymentReference) -->
+                                <input type="hidden"
+                                       name="paymentReference"
+                                       value="@Model.Company.PaymentReference" />
+                            </div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Notes (Optional)</label>
-                            <textarea name="notes" class="form-control" rows="2" placeholder="Additional information"></textarea>
+                            <textarea name="notes"
+                                      class="form-control"
+                                      rows="2"
+                                      placeholder="Additional information"></textarea>
+                        </div>
+
+                        <!-- ✅ Attachment required -->
+                        <div class="form-group">
+                            <label class="form-label">Invoice Attachment (PDF)</label>
+                            <input type="file"
+                                   class="form-control"
+                                   name="attachment"
+                                   accept="application/pdf"
+                                   required />
+                            <small class="text-muted">
+                                Upload the invoice PDF. License renewal will NOT be processed without this attachment.
+                            </small>
                         </div>
 
                         <button type="submit" class="btn btn-success" style="width: 100%;">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                                 style="display: inline-block; vertical-align: middle; margin-right: 8px;">
                                 <polyline points="23 4 23 10 17 10"></polyline>
                                 <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                             </svg>
                             Renew License
                         </button>
                     </form>
+
                 </div>
             </div>
         </div>

@@ -2,8 +2,10 @@
 using Central_Hub.Models;
 using Central_Hub.Models.ViewModels;
 using Central_Hub.Services;
+using Central_Hub.Services.Email;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using System.Security.Policy;
 using System.Text.RegularExpressions;
 
@@ -13,10 +15,12 @@ namespace Central_Hub.Controllers
     {
         public readonly Central_HubDbContext _Db;
         public readonly ILicenseService _LS;
-        public ClientCompanyController(Central_HubDbContext Db, ILicenseService LS)
+        private readonly IEmailService _email;
+        public ClientCompanyController(Central_HubDbContext Db, ILicenseService LS, IEmailService email)
         {
             _Db = Db;
             _LS = LS;
+            _email = email;
         }
         public async Task<IActionResult> Index(string searchTerm = "", string status = "all")
         {
@@ -119,44 +123,7 @@ namespace Central_Hub.Controllers
 
         }
 
-        [HttpGet]
-        public IActionResult CreateFromDemo1()
-        {
-
-
-            var model = new ClientCompany
-            {
-                CompanyName = TempData["CompanyName"]?.ToString(),
-                RegistrationNumber = TempData["RegistrationNumber"]?.ToString(),
-                EmailDomain = TempData["EmailDomain"]?.ToString(),
-                Province = TempData["Province"]?.ToString(),
-
-            };
-
-            if (int.TryParse(TempData["EstimatedEmployeeCount"]?.ToString(), out int empCount))
-            {
-
-                model.EstimatedEmployeeCount = empCount;
-            }
-
-            if (Enum.TryParse<CompanyType>(TempData["CompanyType"]?.ToString(), out var companyType))
-            {
-                model.CompanyType = companyType;
-            }
-
-            var admin = new CompanyAdministrator
-            {
-                FirstName = TempData["AdminFullName"]?.ToString(),
-                Surname = TempData["AdminSurname"]?.ToString(),
-                Email = TempData["AdminEmail"]?.ToString(),
-                PhoneNumber = TempData["AdminphoneNumber"]?.ToString(),
-                JobTitle = TempData["AdminJobTitle"]?.ToString(),
-                Department = TempData["AdminDepartment"]?.ToString(),
-            };
-            ViewBag.Administrator = admin;
-            ViewBag.DemoRequestId = TempData["DemoRequestId"];
-            return View();
-        }
+     
         [HttpGet]
         public IActionResult CreateFromDemo()
         {
@@ -197,16 +164,13 @@ namespace Central_Hub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateFromDemo(CreateFromDemoViewModel model)
+        public async Task<IActionResult> CreateFromDemo(CreateFromDemoViewModel model, CancellationToken ct)
         {
-            //if (!ModelState.IsValid)
-            //    return View(model);
-
             var company = model.Company;
             var admin = model.Administrator;
 
             var existingCompany = await _Db.ClientCompanies
-                .FirstOrDefaultAsync(c => c.EmailDomain == company.EmailDomain);
+                .FirstOrDefaultAsync(c => c.EmailDomain == company.EmailDomain, ct);
 
             if (existingCompany != null)
             {
@@ -215,6 +179,7 @@ namespace Central_Hub.Controllers
                 return View(model);
             }
 
+            // License details
             company.LicenseKey = _LS.GenerateLicenseKey(company);
             company.LicenseIssueDate = DateTime.UtcNow;
             company.LicenseExpiryDate = _LS.CalculateLicenseExpiryDate();
@@ -222,26 +187,106 @@ namespace Central_Hub.Controllers
             company.CreatedDate = DateTime.UtcNow;
             company.IsActive = false;
 
+            // link admin (includes EmployeeNumber if you added it to the view)
             company.Administrator = admin;
 
             _Db.ClientCompanies.Add(company);
-            await _Db.SaveChangesAsync();
+            await _Db.SaveChangesAsync(ct); // ✅ CompanyId now exists
 
+            // ✅ PaymentReference: DECL-<CompanyId>-XXX
+            company.PaymentReference = await GenerateUniquePaymentReferenceAsync(company.CompanyId, ct);
+            await _Db.SaveChangesAsync(ct);
+
+            // Mark demo request converted
+            DemoRequest? demoRequest = null;
             if (model.DemoRequestId.HasValue)
             {
-                var demoRequest = await _Db.DemoRequests.FindAsync(model.DemoRequestId.Value);
+                demoRequest = await _Db.DemoRequests.FindAsync(new object[] { model.DemoRequestId.Value }, ct);
                 if (demoRequest != null)
                 {
                     demoRequest.ConvertedToClient = true;
                     demoRequest.ConversionDate = DateTime.UtcNow;
                     demoRequest.ConvertedCompanyId = company.CompanyId;
                     demoRequest.Status = DemoRequestStatus.Converted;
-                    await _Db.SaveChangesAsync();
+                    await _Db.SaveChangesAsync(ct);
                 }
             }
 
+            // ✅ Email: "Converted" (License Key + Payment Reference)
+            // If email fails, do NOT block conversion
+            try
+            {
+                var to = admin?.Email;
+
+                if (!string.IsNullOrWhiteSpace(to))
+                {
+                    var fullName = $"{admin?.FirstName} {admin?.Surname}".Trim();
+                    if (string.IsNullOrWhiteSpace(fullName)) fullName = "there";
+
+                    var subject = "Your Declarify account is ready (License Key & Payment Reference)";
+
+                    var body = $@"
+<div style='font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.55;color:#111'>
+  <h2 style='margin:0 0 10px 0'>Account Created</h2>
+
+  <p style='margin:0 0 14px 0'>Hi {fullName},</p>
+
+  <p style='margin:0 0 14px 0'>
+    Your demo request has been converted to an active client account for <b>{company.CompanyName}</b>.
+  </p>
+
+  <hr style='border:none;border-top:1px solid #e5e7eb;margin:18px 0' />
+
+  <h3 style='margin:0 0 10px 0'>Your access details</h3>
+  <p style='margin:0 0 10px 0'>
+    <b>License Key:</b> {company.LicenseKey}<br/>
+    <b>Payment Reference:</b> {company.PaymentReference}
+  </p>
+
+  <p style='margin:0 0 18px 0'>
+    Please use this <b>Payment Reference</b> on <b>all invoices and transactions</b> going forward.
+  </p>
+
+  <hr style='border:none;border-top:1px solid #e5e7eb;margin:18px 0' />
+
+  <h3 style='margin:0 0 10px 0'>Company details</h3>
+  <table style='border-collapse:collapse;width:100%'>
+    <tr><td style='padding:6px 0;width:220px;color:#374151'><b>Company Name</b></td><td style='padding:6px 0'>{company.CompanyName}</td></tr>
+    <tr><td style='padding:6px 0;color:#374151'><b>Registration Number</b></td><td style='padding:6px 0'>{company.RegistrationNumber}</td></tr>
+    <tr><td style='padding:6px 0;color:#374151'><b>Email Domain</b></td><td style='padding:6px 0'>{company.EmailDomain}</td></tr>
+    <tr><td style='padding:6px 0;color:#374151'><b>Province</b></td><td style='padding:6px 0'>{company.Province}</td></tr>
+    <tr><td style='padding:6px 0;color:#374151'><b>Organisation Type</b></td><td style='padding:6px 0'>{company.CompanyType}</td></tr>
+    <tr><td style='padding:6px 0;color:#374151'><b>Estimated Employees</b></td><td style='padding:6px 0'>{(company.EstimatedEmployeeCount?.ToString() ?? "Not provided")}</td></tr>
+  </table>
+
+  <h3 style='margin:18px 0 10px 0'>Administrator</h3>
+  <table style='border-collapse:collapse;width:100%'>
+    <tr><td style='padding:6px 0;width:220px;color:#374151'><b>Name</b></td><td style='padding:6px 0'>{admin?.FirstName} {admin?.Surname}</td></tr>
+    <tr><td style='padding:6px 0;color:#374151'><b>Email</b></td><td style='padding:6px 0'>{admin?.Email}</td></tr>
+    <tr><td style='padding:6px 0;color:#374151'><b>Phone</b></td><td style='padding:6px 0'>{admin?.PhoneNumber}</td></tr>
+    <tr><td style='padding:6px 0;color:#374151'><b>Job Title</b></td><td style='padding:6px 0'>{(string.IsNullOrWhiteSpace(admin?.JobTitle) ? "Not provided" : admin!.JobTitle)}</td></tr>
+    <tr><td style='padding:6px 0;color:#374151'><b>Department</b></td><td style='padding:6px 0'>{(string.IsNullOrWhiteSpace(admin?.Department) ? "Not provided" : admin!.Department)}</td></tr>
+    <tr><td style='padding:6px 0;color:#374151'><b>Employee Number</b></td><td style='padding:6px 0'>{(string.IsNullOrWhiteSpace(admin?.EmployeeNumber) ? "Not provided" : admin!.EmployeeNumber)}</td></tr>
+  </table>
+
+  <p style='margin:18px 0 0 0'>
+    Regards,<br/>
+    <b>Inspired IT Central Hub</b>
+  </p>
+</div>";
+
+                    await _email.SendAsync(to, subject, body, ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Do not block conversion if email fails
+                // You can replace Console with ILogger if you inject it
+                Console.WriteLine(ex);
+            }
+
             TempData["SuccessMessage"] =
-                $"Client company created successfully. License Key: {company.LicenseKey}";
+                $"Client company created successfully. License Key: {company.LicenseKey} | Payment Ref: {company.PaymentReference}";
 
             return RedirectToAction(nameof(Details), new { id = company.CompanyId });
         }
@@ -328,13 +373,13 @@ namespace Central_Hub.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddCredit(
-    int companyId,
-    int creditAmount,
-    decimal amountPaid,
-    string? notes,
-    string? purchaseReference,  // posted from hidden, but we won't trust it
-    IFormFile? attachment,
-    CancellationToken ct)
+     int companyId,
+     int creditAmount,
+     decimal amountPaid,
+     string? notes,
+     string? purchaseReference, // ignored
+     IFormFile? attachment,
+     CancellationToken ct)
         {
             if (creditAmount <= 0)
             {
@@ -342,14 +387,12 @@ namespace Central_Hub.Controllers
                 return RedirectToAction(nameof(Details), new { id = companyId });
             }
 
-            // ✅ Must have attachment
             if (attachment == null || attachment.Length == 0)
             {
                 TempData["ErrorMessage"] = "Please upload the invoice attachment (PDF) before adding credit.";
                 return RedirectToAction(nameof(Details), new { id = companyId });
             }
 
-            // ✅ Only allow PDF (basic check)
             var ext = Path.GetExtension(attachment.FileName);
             if (!string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase))
             {
@@ -361,22 +404,26 @@ namespace Central_Hub.Controllers
             if (company == null)
                 return NotFound();
 
+            if (string.IsNullOrWhiteSpace(company.PaymentReference))
+            {
+                TempData["ErrorMessage"] = "This company does not have a Payment Reference yet. Please generate it first.";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+
             var now = DateTime.UtcNow;
 
-            // ✅ Generate invoice number server-side (don’t trust hidden input)
+            // ✅ invoice number is still generated for the file name
             var invoiceNo = GenerateCreditInvoiceNo(company.CompanyId);
 
-            // ✅ Build folder + filename
+            // ✅ Save invoice PDF
             var safeCompanyName = SafeFolderName(company.CompanyName);
             var baseDir = @"C:\Inspired IT Central Hub";
             var creditsDir = Path.Combine(baseDir, safeCompanyName, "Credits");
             Directory.CreateDirectory(creditsDir);
 
             var fileName = $"{invoiceNo}_{safeCompanyName}.pdf";
-            var fullPath = Path.Combine(creditsDir, fileName);
-            fullPath = EnsureUniqueFilePath(fullPath);
+            var fullPath = EnsureUniqueFilePath(Path.Combine(creditsDir, fileName));
 
-            // ✅ Save file first (so we don’t create DB rows if file write fails)
             try
             {
                 await using var stream = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
@@ -384,8 +431,7 @@ namespace Central_Hub.Controllers
             }
             catch (UnauthorizedAccessException)
             {
-                TempData["ErrorMessage"] =
-                    "Server does not have permission to save the invoice file. Please grant write access to: C:\\Inspired IT Central Hub";
+                TempData["ErrorMessage"] = "Server does not have permission to save the invoice file. Please grant write access to: C:\\Inspired IT Central Hub";
                 return RedirectToAction(nameof(Details), new { id = companyId });
             }
             catch (IOException ex)
@@ -394,25 +440,25 @@ namespace Central_Hub.Controllers
                 return RedirectToAction(nameof(Details), new { id = companyId });
             }
 
-            // 1) Create credit batch
+            // ✅ CREDIT BATCH: PurchaseReference MUST be PaymentReference (your requirement)
             var newBatch = new CreditBatch
             {
                 CompanyId = company.CompanyId,
                 OriginalAmount = creditAmount,
                 RemainingAmount = creditAmount,
                 LoadDate = now,
-                PurchaseReference = invoiceNo,
+
+                PurchaseReference = company.PaymentReference, // ✅ IMPORTANT
                 Notes = notes,
 
-                // ✅ NEW columns
                 FileName = Path.GetFileName(fullPath),
                 FilePath = fullPath
             };
 
             _Db.CreditBatches.Add(newBatch);
-            await _Db.SaveChangesAsync(ct); // ensures BatchId exists
+            await _Db.SaveChangesAsync(ct);
 
-            // 2) Audit transaction
+            // ✅ CREDIT TRANSACTION: show payment ref in history table “Reference”
             var transaction = new CreditTransaction
             {
                 CompanyId = company.CompanyId,
@@ -422,7 +468,7 @@ namespace Central_Hub.Controllers
                 AmountPaid = amountPaid,
                 TransactionDate = now,
                 ExpiryDate = newBatch.ExpiryDate,
-                ReferenceNumber = newBatch.PurchaseReference,
+                ReferenceNumber = company.PaymentReference, // ✅ payment ref
                 CreatedBy = "Admin",
                 Notes = notes
             };
@@ -430,11 +476,10 @@ namespace Central_Hub.Controllers
             _Db.CreditTransactions.Add(transaction);
 
             company.LastModifiedDate = now;
-
             await _Db.SaveChangesAsync(ct);
 
             TempData["SuccessMessage"] =
-                $"Successfully added {creditAmount} credits to {company.CompanyName}. Invoice: {invoiceNo}";
+                $"Successfully added {creditAmount} credits to {company.CompanyName}. Payment Ref: {company.PaymentReference}";
 
             return RedirectToAction(nameof(Details), new { id = companyId });
         }
@@ -502,38 +547,113 @@ namespace Central_Hub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RenewLicense(int companyId, decimal amountPaid, string paymentReference, string notes)
+        public async Task<IActionResult> RenewLicense(
+       int companyId,
+       decimal amountPaid,
+       string? paymentReference,   // ignored (read-only in UI)
+       string? invoiceNumber,      // ignored (read-only in UI)
+       string paymentMethod,       // ✅ NEW: from dropdown
+       string? notes,
+       IFormFile? attachment,
+       CancellationToken ct)
         {
-            var company = await _Db.ClientCompanies.FindAsync(companyId);
+            var company = await _Db.ClientCompanies.FindAsync(new object[] { companyId }, ct);
             if (company == null)
-            {
                 return NotFound();
+
+            if (string.IsNullOrWhiteSpace(company.PaymentReference))
+            {
+                TempData["ErrorMessage"] = "This company does not have a Payment Reference yet. Please generate it first.";
+                return RedirectToAction(nameof(Details), new { id = companyId });
             }
+
+            // ✅ Validate payment method
+            if (string.IsNullOrWhiteSpace(paymentMethod))
+            {
+                TempData["ErrorMessage"] = "Please select a Payment Method.";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+
+            // ✅ Must upload invoice PDF
+            if (attachment == null || attachment.Length == 0)
+            {
+                TempData["ErrorMessage"] = "Please upload the invoice attachment (PDF) before renewing the license.";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+
+            var ext = Path.GetExtension(attachment.FileName);
+            if (!string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "Invoice attachment must be a PDF file.";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+
             var now = DateTime.UtcNow;
-            var newExpiryDate = CalculateNextFebruaryExpiry(now);
+
+            // ✅ Generate server-side license invoice number
+            var licInvoiceNo = GenerateLicenseInvoiceNo(company.CompanyId);
+
+            // ✅ Save invoice PDF to: C:\Inspired IT Central Hub\[Company]\License Renewals\
+            var safeCompanyName = SafeFolderName(company.CompanyName);
+            var baseDir = @"C:\Inspired IT Central Hub";
+            var renewalsDir = Path.Combine(baseDir, safeCompanyName, "License Renewals");
+            Directory.CreateDirectory(renewalsDir);
+
+            var fileName = $"{licInvoiceNo}_{safeCompanyName}.pdf";
+            var fullPath = EnsureUniqueFilePath(Path.Combine(renewalsDir, fileName));
+
+            try
+            {
+                await using var stream = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                await attachment.CopyToAsync(stream, ct);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TempData["ErrorMessage"] = "Server does not have permission to save the license invoice file. Please grant write access to: C:\\Inspired IT Central Hub";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+            catch (IOException ex)
+            {
+                TempData["ErrorMessage"] = $"Failed to save license invoice file. {ex.Message}";
+                return RedirectToAction(nameof(Details), new { id = companyId });
+            }
+
+            // ✅ Calculate new expiry
+            var newExpiryDate = CalculateNextFebruaryExpiry(company.LicenseExpiryDate);
+
+            // ✅ Create renewal record
             var renewal = new LicenseRenewal
             {
                 CompanyId = companyId,
                 PreviousExpiryDate = company.LicenseExpiryDate,
-                RenewalDate = DateTime.UtcNow,
+                NewExpiryDate = newExpiryDate,
+                RenewalDate = now,
                 AmountPaid = amountPaid,
-                PaymentReference = paymentReference,
-                ProcessedBy = "Admin",
-                Notes = notes
+
+                PaymentMethod = paymentMethod,               // ✅ NEW
+                PaymentReference = company.PaymentReference, // ✅ always company-level reference
+                InvoiceNumber = licInvoiceNo,
+
+                Notes = notes,
+                ProcessedBy = "Inspired IT Admin",
+
+                FileName = Path.GetFileName(fullPath),
+                FilePath = fullPath
             };
 
             company.LicenseExpiryDate = newExpiryDate;
             company.LicenseStatus = LicenseStatus.Active;
-            company.LastModifiedDate = DateTime.UtcNow;
+            company.LastModifiedDate = now;
 
             _Db.LicenseRenewals.Add(renewal);
-            await _Db.SaveChangesAsync();
+            await _Db.SaveChangesAsync(ct);
 
+            TempData["SuccessMessage"] =
+                $"License renewed successfully until {newExpiryDate:dd MMMM yyyy}. Payment Method: {paymentMethod}. Invoice: {licInvoiceNo}";
 
-
-            TempData["SuccessMessage"] = $"License renewed successfully until {renewal.NewExpiryDate:dd MMMM yyyy}.";
             return RedirectToAction(nameof(Details), new { id = companyId });
         }
+
         private DateTime CalculateNextFebruaryExpiry(DateTime currentExpiry)
         {
             // Current expiry is already Feb 1 of some year
@@ -564,6 +684,12 @@ namespace Central_Hub.Controllers
             return RedirectToAction(nameof(Details), new { id = companyId });
         }
 
+        private static string GenerateLicenseInvoiceNo(int companyId)
+        {
+            var now = DateTime.UtcNow;
+            var rand = Guid.NewGuid().ToString("N")[..4].ToUpperInvariant();
+            return $"LIC-{now:yyyyMMdd-HHmmss}-{companyId}-{rand}";
+        }
 
         [HttpPost]
         public async Task<IActionResult> ApproveRequest(int requestId, int approvedAmount)
@@ -638,5 +764,80 @@ namespace Central_Hub.Controllers
             // Extremely unlikely, but safe fallback
             return Path.Combine(dir, $"{name}_{Guid.NewGuid():N}{ext}");
         }
+
+        private static string GeneratePaymentReference(int companyId)
+        {
+            // DECL-000{CompanyId}00INS-XXXX
+            // Example: DECL-00012300INS-7F2A
+
+            var companyCode = $"000{companyId}00INS";
+
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            var suffix = new string(Enumerable.Range(0, 4)
+                .Select(_ => chars[Random.Shared.Next(chars.Length)])
+                .ToArray());
+
+            return $"DECL-{companyCode}-{suffix}";
+        }
+
+
+        private async Task<string> GenerateUniquePaymentReferenceAsync(int companyId, CancellationToken ct)
+        {
+            // very low collision risk, but we’ll still guard it
+            for (int i = 0; i < 30; i++)
+            {
+                var candidate = GeneratePaymentReference(companyId);
+
+                var exists = await _Db.ClientCompanies
+                    .AnyAsync(c => c.PaymentReference == candidate, ct);
+
+                if (!exists)
+                    return candidate;
+            }
+
+            // fallback (extremely unlikely)
+            return $"DECL-{companyId}-{Guid.NewGuid().ToString("N")[..3].ToUpperInvariant()}";
+        }
+        [HttpGet]
+        public async Task<IActionResult> DownloadCreditInvoice(int batchId, CancellationToken ct)
+        {
+            var batch = await _Db.CreditBatches
+                .Include(b => b.Company)
+                .FirstOrDefaultAsync(b => b.BatchId == batchId, ct);
+
+            if (batch == null)
+                return NotFound("Credit batch not found.");
+
+            if (string.IsNullOrWhiteSpace(batch.FilePath) || !System.IO.File.Exists(batch.FilePath))
+                return NotFound("Invoice file not found on disk.");
+
+            var downloadName = !string.IsNullOrWhiteSpace(batch.FileName)
+                ? batch.FileName
+                : Path.GetFileName(batch.FilePath);
+
+            // Force download
+            return PhysicalFile(batch.FilePath, "application/pdf", downloadName);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadLicenseInvoice(int renewalId, CancellationToken ct)
+        {
+            var renewal = await _Db.LicenseRenewals
+                .Include(r => r.Company)
+                .FirstOrDefaultAsync(r => r.RenewalId == renewalId, ct);
+
+            if (renewal == null)
+                return NotFound("License renewal not found.");
+
+            if (string.IsNullOrWhiteSpace(renewal.FilePath) || !System.IO.File.Exists(renewal.FilePath))
+                return NotFound("Invoice file not found on disk.");
+
+            var downloadName = !string.IsNullOrWhiteSpace(renewal.FileName)
+                ? renewal.FileName
+                : Path.GetFileName(renewal.FilePath);
+
+            return PhysicalFile(renewal.FilePath, "application/pdf", downloadName);
+        }
+
     }
 }

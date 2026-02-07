@@ -8,6 +8,7 @@ namespace Central_Hub.Models
         [Key]
         public int AdministratorId { get; set; }
 
+        public string? EmployeeNumber { get; set; }
         [Required]
         [ForeignKey("Company")]
         public int CompanyId { get; set; }

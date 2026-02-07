@@ -95,6 +95,8 @@ namespace Central_Hub.Models
         // Navigation Property
         public virtual ClientCompany? Company { get; set; }
 
+        public string? FileName { get; set; }
+        public string? FilePath { get; set; }
         //public int ClientInstanceId { get; set; }
         //public virtual ClientInstance? ClientInstance { get; set; }
     }

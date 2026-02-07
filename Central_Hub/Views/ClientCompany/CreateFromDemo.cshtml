@@ -250,6 +250,19 @@
                             </div>
                             <span class="form-help">Must match the company email domain</span>
                         </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                Employee Number
+                                <span class="required-indicator">*</span>
+                            </label>
+                            <input type="text"
+                                   name="Administrator.EmployeeNumber"
+                                   class="form-input @(Model.Administrator.EmployeeNumber != null ? "prefilled" : "")"
+                                   value="@Model.Administrator.EmployeeNumber"
+                                   placeholder="e.g., EMP12345"
+                                   required />
+                            <span class="form-help">Client admin employee/ID number used in the organisation</span>
+                        </div>
 
                         <div class="form-group">
                             <label class="form-label">

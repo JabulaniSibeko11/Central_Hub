@@ -75,6 +75,7 @@ namespace Central_Hub.Models
         [Display(Name = "Status")]
         public LicenseStatus LicenseStatus { get; set; } = LicenseStatus.Trial;
 
+        public string? PaymentReference { get; set; }
         // Credit Information
         //[Display(Name = "Current Credit Balance")]
         //public int CurrentCreditBalance { get; set; } = 0;

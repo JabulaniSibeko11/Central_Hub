@@ -1,6 +1,8 @@
 using Central_Hub.Data;
 using Central_Hub.Filter;
+using Central_Hub.Infrastructure.Options;
 using Central_Hub.Services;
+using Central_Hub.Services.Email;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +25,9 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<CompanyAuthFilter>();
+
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 // ? ADD THIS BEFORE builder.Build() - This was your main issue!
 builder.Services.AddAuthentication()
