@@ -345,7 +345,7 @@
 
                         <!-- ✅ License Invoice No (disabled + hidden) -->
                         <div class="form-group">
-                            <label class="form-label">License Invoice Number</label>
+                            <label class="form-label" style="color:white;">License Invoice Number</label>
                             <input type="text" class="form-control" value="@licDisplayNo" disabled />
                             <input type="hidden" name="invoiceNumber" value="@licHiddenNo" />
                         </div>
@@ -353,7 +353,7 @@
                         <!-- ✅ Amount Paid + Payment Reference on same line -->
                         <div class="form-row">
                             <div class="form-group" style="flex:1;">
-                                <label class="form-label">Amount Paid (ZAR)</label>
+                                <label class="form-label" style="color:white;">Amount Paid (ZAR)</label>
                                 <input type="number"
                                        name="amountPaid"
                                        class="form-control"
@@ -363,7 +363,7 @@
                                        required />
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Payment Method</label>
+                                <label class="form-label" style="color:white;">Payment Method</label>
                                 <select name="paymentMethod" class="form-control" required>
                                     <option value="">Select Payment Method</option>
                                     <option value="EFT">EFT</option>
@@ -373,7 +373,7 @@
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
-                            <div class="form-group" style="flex:1;">
+                            <div class="form-group" style="flex:1; color:white;">
                                 <label class="form-label">Payment Reference</label>
                                 <input type="text"
                                        class="form-control"
@@ -388,7 +388,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Notes (Optional)</label>
+                            <label class="form-label" style="color:white;">Notes (Optional)</label>
                             <textarea name="notes"
                                       class="form-control"
                                       rows="2"
@@ -397,7 +397,7 @@
 
                         <!-- ✅ Attachment required -->
                         <div class="form-group">
-                            <label class="form-label">Invoice Attachment (PDF)</label>
+                            <label class="form-label" style="color:white;">Invoice Attachment (PDF)</label>
                             <input type="file"
                                    class="form-control"
                                    name="attachment"

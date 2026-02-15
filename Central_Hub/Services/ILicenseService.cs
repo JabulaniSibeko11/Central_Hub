@@ -66,9 +66,16 @@ namespace Central_Hub.Services
         {
             DateTime today = DateTime.UtcNow;
 
-            int targetYear = today.Month == 12 ? today.Year + 1 : today.Year;
-             return new DateTime(targetYear, 2,1,23,59,59,DateTimeKind.Utc);
+            DateTime thisYearFebruary = new DateTime(today.Year, 2, 1, 23, 59, 59, DateTimeKind.Utc);
+
+            if (today >= thisYearFebruary)
+            {
+                return new DateTime(today.Year + 1, 2, 1, 23, 59, 59, DateTimeKind.Utc);
+            }
+
+            return thisYearFebruary;
         }
+
 
         public DateTime CalculateCreditExpiryDate()
         {
