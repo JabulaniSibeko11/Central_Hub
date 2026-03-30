@@ -1,425 +1,381 @@
 ﻿@using Central_Hub.Models.ViewModels
+@using Central_Hub.Models
 @model DashboardViewModel
 @{
-    ViewData["Title"] = "Central Hub Dashboard";
     Layout = null;
+    ViewData["Title"] = "Dashboard — Declarify Central Hub";
+    var adminName = User.Identity?.Name ?? "Admin";
+    var initials = string.Concat(adminName.Split(' ').Take(2).Select(w => w.FirstOrDefault())).ToUpper();
+    if (string.IsNullOrEmpty(initials)) initials = "CA";
+    var creditUsePct = Model.TotalCreditsPurchased > 0
+        ? (int)Math.Round((double)Model.TotalCreditsUsed / Model.TotalCreditsPurchased * 100) : 0;
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Declarify Central Hub</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="~/css/dashboard.css" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>@ViewData["Title"]</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="~/css/hubcss.css" rel="stylesheet">
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- Dashboard Header -->
-        <div class="dashboard-header">
-            <h1>Welcome to Declarify Central Hub</h1>
-            <p>Real-time overview of your Declaration of Interest management system</p>
-            <div class="header-actions">
-               @*  <button asp-action="Create" asp-controller="ClientCompany"  class="btn btn-primary">+ Add New Client</button>
- *@
-                <a href="@Url.Action("RequestDemo", "DemoRequest")" class="btn btn-primary">
-                    + Add New Request
+
+    <!-- ── Navbar ──────────────────────────────────────────────── -->
+    <nav class="hub-nav">
+        <div class="hub-nav-inner">
+            <a href="@Url.Action("Index", "Home")" class="hub-brand">
+                <img src="~/images/declarify logo.png" alt="Declarify" class="hub-brand-img" />
+                <div>
+                    <div class="hub-brand-text">Declar<span>ify</span></div>
+                    <div class="hub-brand-sub">Central Hub</div>
+                </div>
+            </a>
+            <span class="hub-env-badge prod">● Production</span>
+
+            <div class="hub-nav-links" style="margin-left:24px">
+                <a href="@Url.Action("Index", "Home")" class="hub-nav-link active">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" /></svg>
+                    Dashboard
                 </a>
-               @*  <button class="btn btn-secondary">View Requests</button> *@
-                <a href="@Url.Action("ManageDemoRequest", "DemoRequest")" class="btn btn-secondary">
-                    📋 Manage Requests
+                <a href="@Url.Action("Index", "ClientCompany")" class="hub-nav-link">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
+                    Clients
                 </a>
-
-                <a href="@Url.Action("RequestedCredits", "Home")" class="btn btn-primary" target="_blank">
-                    Requested Credits
-                </a>
-
-            </div>
-        </div>
-
-        <!-- Key Metrics Row -->
-        <div class="stats-grid">
-            <!-- Total Clients -->
-            <div class="stat-card">
-                <div class="stat-icon primary">
-                    <svg width="28" height="28" fill="none" stroke="white" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
-                </div>
-                <div class="stat-value">@Model.TotalClients</div>
-                <div class="stat-label">Total Clients</div>
-                <div class="stat-sublabel">
-                    <span style="color: var(--color-success); font-weight: 600;">@Model.ActiveClients Active</span> ·
-                    <span style="color: #3B82F6;">@Model.TrialClients Trial</span>
-                </div>
-            </div>
-
-            <!-- Credits in Circulation -->
-            <div class="stat-card">
-                <div class="stat-icon success">
-                    <svg width="28" height="28" fill="none" stroke="white" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M12 6v6l4 2"></path>
-                    </svg>
-                </div>
-                <div class="stat-value">@Model.TotalCreditsInCirculation.ToString("N0")</div>
-                <div class="stat-label">Credits Available</div>
-                <div class="stat-sublabel">
-                    @Model.TotalCreditsPurchased.ToString("N0") purchased · @Model.TotalCreditsUsed.ToString("N0") used
-                </div>
-            </div>
-
-            <!-- Monthly Revenue -->
-            <div class="stat-card">
-                <div class="stat-icon warning">
-                    <svg width="28" height="28" fill="none" stroke="white" stroke-width="2">
-                        <line x1="12" y1="1" x2="12" y2="23"></line>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                </div>
-                <div class="stat-value">R @Model.MonthlyRevenue.ToString("N0")</div>
-                <div class="stat-label">Monthly Revenue</div>
-                <div class="stat-sublabel">
-                    Yearly: R @Model.YearlyRevenue.ToString("N0")
-                </div>
-            </div>
-
-            <!-- Requests -->
-            <div class="stat-card">
-                <div class="stat-icon info">
-                    <svg width="28" height="28" fill="none" stroke="white" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                </div>
-                <div class="stat-value">@Model.TotalDemoRequests</div>
-                <div class="stat-label">Requests</div>
-                <div class="stat-sublabel">
-                    <span style="color: var(--color-warning); font-weight: 600;">@Model.PendingDemoRequests Pending</span> ·
-                    @Model.ConvertedDemos Converted
-                </div>
-            </div>
-        </div>
-
-        <!-- Alerts Section -->
-        @if (Model.ExpiringLicenses?.Any() == true || Model.LowCreditClients?.Any() == true)
-        {
-            <div class="alerts-section">
-                @if (Model.ExpiringLicenses?.Any() == true)
-                {
-                    <div class="alert-card warning">
-                        <div class="alert-icon">⚠️</div>
-                        <div class="alert-content">
-                            <div class="alert-title">Expiring Licenses</div>
-                            <div class="alert-description">@Model.ExpiringLicenses.Count client(s) have licenses expiring within 30 days.</div>
-                            <a href="@Url.Action("Index", "ClientCompany")" class="btn btn-sm btn-primary">
-                                View Details →
-                            </a>
-                        </div>
-                    </div>
-                }
-
-                @if (Model.LowCreditClients?.Any() == true)
-                {
-                    <div class="alert-card info">
-                        <div class="alert-icon">ℹ️</div>
-                        <div class="alert-content">
-                            <div class="alert-title">Low Credit Alert</div>
-                            <div class="alert-description">@Model.LowCreditClients.Count client(s) have less than 50 credits remaining.</div>
-                            <a href="@Url.Action("Index", "ClientCompany")" class="btn btn-sm btn-primary">
-                                View Details →
-                            </a>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
-
-        <!-- Main Content Grid -->
-        <div class="content-grid">
-            <!-- Recent Clients -->
-            <div class="content-card">
-                <div class="card-header">
-                    <h2 class="card-title">Recent Clients</h2>
-                    <a href="@Url.Action("Index", "ClientCompany")" class="card-action">View All</a>
-                </div>
-
-                @if (Model.RecentClients?.Any() == true)
-                {
-                    @foreach (var client in Model.RecentClients)
+                <a href="@Url.Action("ManageDemoRequest", "DemoRequest")" class="hub-nav-link">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5" /></svg>
+                    Demos
+                    @if (Model.PendingDemoRequests > 0)
                     {
-                        <div class="list-item">
-                            <div class="list-item-content">
-                                <div class="list-item-title">@client.CompanyName</div>
-                                <div class="list-item-subtitle">
-                                    @client.Administrator?.Email ·
-                                    @client.CreatedDate.ToString("dd MMM yyyy")
-                                </div>
-                            </div>
-                            <div class="list-item-actions">
-                                @switch (client.LicenseStatus)
-                                {
-                                    case Central_Hub.Models.LicenseStatus.Active:
-                                        <span class="badge badge-success">Active</span>
-                                        break;
-                                    case Central_Hub.Models.LicenseStatus.Trial:
-                                        <span class="badge badge-info">Trial</span>
-                                        break;
-                                    case Central_Hub.Models.LicenseStatus.ExpiringSoon:
-                                        <span class="badge badge-warning">Expiring Soon</span>
-                                        break;
-                                    case Central_Hub.Models.LicenseStatus.Expired:
-                                        <span class="badge badge-danger">Expired</span>
-                                        break;
-                                }
-                                <a href="@Url.Action("Details", "ClientCompany", new { id = client.CompanyId })"
-                                   class="btn btn-primary btn-sm">View</a>
-                            </div>
-                        </div>
+                        <span style="background:var(--danger);color:#fff;font-size:.5rem;font-weight:800;padding:1px 5px;border-radius:99px;min-width:16px;text-align:center">@Model.PendingDemoRequests</span>
                     }
-                }
-                else
-                {
-                    <div class="empty-state">
-                        <div class="empty-state-icon">👥</div>
-                        <p>No clients yet. Create your first client to get started!</p>
-                        <a href="@Url.Action("Create", "ClientCompany")" class="btn btn-primary btn-sm" style="margin-top: 16px;">
-                            + Add Client
-                        </a>
-                    </div>
-                }
+                </a>
+                <a href="@Url.Action("RequestedCredits", "Home")" class="hub-nav-link">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                    Credits
+                </a>
             </div>
 
-            <!-- License Status Breakdown -->
-            <div class="content-card">
-                <div class="card-header">
-                    <h2 class="card-title">License Status Distribution</h2>
+            <div class="hub-nav-right">
+                <div class="hub-sec-bar" style="padding:6px 12px;font-size:.6875rem">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+                    HMAC + AES-256 Active
                 </div>
-
-                <div class="distribution-item">
-                    <div class="distribution-label">
-                        <span class="status-indicator" style="background: var(--color-success);"></span>
-                        Active
-                    </div>
-                    <div class="distribution-bar">
-                        <div class="distribution-fill" style="width: @(Model.TotalClients > 0 ? (Model.ActiveClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%; background: var(--color-success);"></div>
-                    </div>
-                    <div class="distribution-value">
-                        @Model.ActiveClients (@(Model.TotalClients > 0 ? (Model.ActiveClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%)
+                <div class="hub-nav-user">
+                    <div class="hub-nav-av">@initials</div>
+                    <div>
+                        <div class="hub-nav-name">@adminName</div>
+                        <div class="hub-nav-role">Central Admin</div>
                     </div>
                 </div>
-
-                <div class="distribution-item">
-                    <div class="distribution-label">
-                        <span class="status-indicator" style="background: #3B82F6;"></span>
-                        Trial
-                    </div>
-                    <div class="distribution-bar">
-                        <div class="distribution-fill" style="width: @(Model.TotalClients > 0 ? (Model.TrialClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%; background: #3B82F6;"></div>
-                    </div>
-                    <div class="distribution-value">
-                        @Model.TrialClients (@(Model.TotalClients > 0 ? (Model.TrialClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%)
-                    </div>
-                </div>
-
-                <div class="distribution-item">
-                    <div class="distribution-label">
-                        <span class="status-indicator" style="background: var(--color-warning);"></span>
-                        Expiring Soon
-                    </div>
-                    <div class="distribution-bar">
-                        <div class="distribution-fill" style="width: @(Model.TotalClients > 0 ? (Model.ExpiringSoonClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%; background: var(--color-warning);"></div>
-                    </div>
-                    <div class="distribution-value">
-                        @Model.ExpiringSoonClients (@(Model.TotalClients > 0 ? (Model.ExpiringSoonClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%)
-                    </div>
-                </div>
-
-                <div class="distribution-item">
-                    <div class="distribution-label">
-                        <span class="status-indicator" style="background: var(--color-danger);"></span>
-                        Expired
-                    </div>
-                    <div class="distribution-bar">
-                        <div class="distribution-fill" style="width: @(Model.TotalClients > 0 ? (Model.ExpiredClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%; background: var(--color-danger);"></div>
-                    </div>
-                    <div class="distribution-value">
-                        @Model.ExpiredClients (@(Model.TotalClients > 0 ? (Model.ExpiredClients * 100.0 / Model.TotalClients).ToString("F1") : "0")%)
-                    </div>
-                </div>
+                <form method="post" action="@Url.Action("Logout","Home")" style="margin:0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="hub-btn hub-btn-ghost hub-btn-sm">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+                        Sign Out
+                    </button>
+                </form>
             </div>
         </div>
+    </nav>
 
-        <!-- Recent Requests & Conversion Stats -->
-        <div class="content-grid">
-            <!-- Recent Requests -->
-            <div class="content-card">
-                <div class="card-header">
-                    <h2 class="card-title">Recent Requests</h2>
-                    <a href="@Url.Action("ManageDemoRequest", "DemoRequest")" class="card-action">View All</a>
-                </div>
-
-                @if (Model.RecentDemoRequests?.Any() == true)
-                {
-                    @foreach (var demo in Model.RecentDemoRequests)
-                    {
-                        <div class="list-item">
-                            <div class="list-item-content">
-                                <div class="list-item-title">@demo.CompanyName</div>
-                                <div class="list-item-subtitle">
-                                    @demo.ContactPersonName ·
-                                    @demo.RequestDate.ToString("dd MMM yyyy")
-                                </div>
-                            </div>
-                            <div class="list-item-actions">
-                                @switch (demo.Status)
-                                {
-                                    case Central_Hub.Models.DemoRequestStatus.Pending:
-                                        <span class="badge badge-warning">Pending</span>
-                                        break;
-                                    case Central_Hub.Models.DemoRequestStatus.Scheduled:
-                                        <span class="badge badge-info">Scheduled</span>
-                                        break;
-                                    case Central_Hub.Models.DemoRequestStatus.Completed:
-                                        <span class="badge badge-success">Completed</span>
-                                        break;
-                                    case Central_Hub.Models.DemoRequestStatus.Converted:
-                                        <span class="badge badge-success">Converted</span>
-                                        break;
-                                }
-                                <a href="@Url.Action("DemoRequestDetails", "DemoRequest", new { id = demo.DemoRequestId })"
-                                   class="btn btn-primary btn-sm">View</a>
-                            </div>
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📋</div>
-                        <p>No requests yet.</p>
-                        <a href="@Url.Action("RequestDemo", "DemoRequest")" class="btn btn-primary btn-sm" style="margin-top: 16px;" target="_blank">
-                            View Form
-                        </a>
-                    </div>
-                }
-            </div>
-
-            <!-- Conversion Statistics -->
-            <div class="content-card">
-                <div class="card-header">
-                    <h2 class="card-title">Conversion Performance</h2>
-                </div>
-
-                <div class="conversion-display">
-                    <div class="conversion-value">
-                        @Model.ConversionRate.ToString("F1")<span style="font-size: 2.5rem;">%</span>
-                    </div>
-                    <div class="stat-label">Conversion Rate</div>
-                </div>
-
-                <div class="conversion-stats">
-                    <div class="conversion-stat">
-                        <div class="conversion-stat-value">@Model.ScheduledDemos</div>
-                        <div class="conversion-stat-label">Scheduled</div>
-                    </div>
-                    <div class="conversion-stat">
-                        <div class="conversion-stat-value">@Model.CompletedDemos</div>
-                        <div class="conversion-stat-label">Completed</div>
-                    </div>
-                    <div class="conversion-stat">
-                        <div class="conversion-stat-value" style="color: var(--color-success);">@Model.ConvertedDemos</div>
-                        <div class="conversion-stat-label">Converted</div>
-                    </div>
+    <!-- ── Hero ────────────────────────────────────────────────── -->
+    <div class="hub-hero">
+        <div class="hub-hero-inner">
+            <div>
+                <div class="hub-hero-eyebrow">🏛️ Operations Centre</div>
+                <h1 class="hub-hero-title">Declarify <span>Central Hub</span></h1>
+                <p class="hub-hero-desc">Real-time oversight of all client licenses, credits, and compliance deployments.</p>
+                <div class="hub-hero-actions">
+                    <a href="@Url.Action("Create", "ClientCompany")" class="hub-btn hub-btn-cyan">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                        New Client
+                    </a>
+                    <a href="@Url.Action("RequestedCredits", "Home")" class="hub-btn hub-btn-cyan" style="color:#fff;border-color:rgba(255,255,255,.25)">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                        Credit Requests
+                        @if (Model.PendingDemoRequests > 0)
+                        {
+                            <span style="background:var(--danger);color:#fff;border-radius:99px;font-size:.5rem;font-weight:800;padding:1px 6px">!</span>
+                        }
+                    </a>
                 </div>
             </div>
-        </div>
-
-        <!-- Recent Credit Transactions -->
-        @if (Model.RecentCreditTransactions?.Any() == true)
-        {
-            <div class="content-card">
-                <div class="card-header">
-                    <h2 class="card-title">Recent Credit Transactions</h2>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid var(--color-bg-canvas);">
-                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Date</th>
-                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Company</th>
-                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Type</th>
-                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Credits</th>
-                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Amount</th>
-                               @*  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Expiry Date</th> *@
-                                <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--color-text-muted); font-size: 0.875rem;">Reference</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var transaction in Model.RecentCreditTransactions)
-                            {
-                                <tr style="border-bottom: 1px solid var(--color-bg-canvas);">
-                                    <td style="padding: 12px; white-space: nowrap;">@transaction.TransactionDate.ToString("dd MMM yyyy")</td>
-                                    <td style="padding: 12px;">
-                                        <a href="@Url.Action("Details", "ClientCompany", new { id = transaction.CompanyId })"
-                                           style="color: var(--color-accent); text-decoration: none; font-weight: 500;">
-                                            @transaction.Company.CompanyName
-                                        </a>
-                                    </td>
-                                    <td style="padding: 12px;">
-                                        @switch (transaction.TransactionType)
-                                        {
-                                            case Central_Hub.Models.CreditTransactionType.Purchase:
-                                                <span class="badge badge-success">Purchase</span>
-                                                break;
-                                            case Central_Hub.Models.CreditTransactionType.Bonus:
-                                                <span class="badge badge-info">Bonus</span>
-                                                break;
-                                            default:
-                                                <span class="badge badge-info">@transaction.TransactionType</span>
-                                                break;
-                                        }
-                                    </td>
-                                    <td style="padding: 12px;"><strong style="color: var(--color-accent); font-size: 1.1rem;">@transaction.CreditsAmount</strong></td>
-                                    <td style="padding: 12px; white-space: nowrap;">R @(transaction.AmountPaid?.ToString("N2") ?? "-")</td>
-                                   @*  <td style="padding: 12px; white-space: nowrap;">@transaction.ExpiryDate.ToString("dd MMM yyyy")</td> *@
-                                    <td style="padding: 12px;"><code style="font-size: 0.85rem; background: #F1F5F9; padding: 4px 8px; border-radius: 4px;">@transaction.ReferenceNumber</code></td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        }
-
-        <!-- Quick Actions Footer -->
-        <div class="quick-actions">
-            <h3>Quick Actions</h3>
-            <div class="quick-actions-grid">
-                <a href="@Url.Action("RequestDemo", "DemoRequest")" class="btn btn-primary">
-                    + Add New Request
-                </a>
-                <a href="@Url.Action("ManageDemoRequests", "DemoRequest")" class="btn btn-primary">
-                    📋 Manage Requests
-                </a>
-                <a href="@Url.Action("Index", "ClientCompany")" class="btn btn-primary">
-                    👥 View All Clients
-                </a>
-                <a href="@Url.Action("RequestDemo", "DemoRequest")" class="btn btn-primary" target="_blank">
-                    🔗 Preview Form
-                </a>
-
-                <a href="@Url.Action("RequestedCredits", "Home")" class="btn btn-primary" target="_blank">
-                     Requested Credits
-                </a>
-
+            <div class="hub-hero-stat">
+                <div class="hub-hero-stat-val">@Model.ActiveClients<span>/</span>@Model.TotalClients</div>
+                <div class="hub-hero-stat-lbl">Active Clients</div>
             </div>
         </div>
     </div>
+
+    <!-- ── KPI Strip ────────────────────────────────────────────── -->
+    <div class="hub-kpi-strip">
+        <div class="hub-kpi-inner">
+            <div class="hub-kpi navy hub-anim">
+                <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg></div>
+                <div><div class="hub-kpi-val">@Model.TotalClients</div><div class="hub-kpi-lbl">Total Clients</div></div>
+                <div class="hub-kpi-accent"></div>
+            </div>
+            <div class="hub-kpi green hub-anim">
+                <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                <div><div class="hub-kpi-val">@Model.ActiveClients</div><div class="hub-kpi-lbl">Active Licenses</div></div>
+                <div class="hub-kpi-accent"></div>
+            </div>
+            <div class="hub-kpi cyan hub-anim">
+                <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg></div>
+                <div><div class="hub-kpi-val">@Model.TotalCreditsInCirculation.ToString("N0")</div><div class="hub-kpi-lbl">Credits Active</div></div>
+                <div class="hub-kpi-accent"></div>
+            </div>
+            <div class="hub-kpi @(Model.PendingDemoRequests > 0 ? "amber" : "green") hub-anim">
+                <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5" /></svg></div>
+                <div><div class="hub-kpi-val">@Model.PendingDemoRequests</div><div class="hub-kpi-lbl">Pending Demos</div></div>
+                <div class="hub-kpi-accent"></div>
+            </div>
+            <div class="hub-kpi @(Model.ExpiredClients > 0 ? "red" : "green") hub-anim">
+                <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" /></svg></div>
+                <div><div class="hub-kpi-val">@Model.ExpiredClients</div><div class="hub-kpi-lbl">Expired Licenses</div></div>
+                <div class="hub-kpi-accent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Main content ─────────────────────────────────────────── -->
+    <div class="hub-main">
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="hub-alert success">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                @TempData["Success"]
+            </div>
+        }
+
+        <!-- Row 1: Alerts + Credit Overview -->
+        <div class="hub-g2" style="margin-bottom:20px">
+
+            <!-- Expiring licenses -->
+            <div class="hub-card hub-anim">
+                <div class="hub-card-head">
+                    <div class="hub-card-icon amber">⚠️</div>
+                    <div><div class="hub-card-title">Expiring Licenses</div><div class="hub-card-sub">Expire within 30 days</div></div>
+                    <div class="hub-card-action"><a href="@Url.Action("Index", "ClientCompany")" class="hub-btn hub-btn-ghost hub-btn-xs">View all</a></div>
+                </div>
+                @if (!Model.ExpiringLicenses.Any())
+                {
+                    <div class="hub-empty" style="padding:30px">
+                        <div style="font-size:26px">✅</div>
+                        <div class="hub-empty-title" style="font-size:.875rem">All licenses healthy</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="hub-table-wrap">
+                        <table class="hub-table">
+                            <thead><tr><th>Company</th><th>Expires</th><th>Days</th></tr></thead>
+                            <tbody>
+                                @foreach (var c in Model.ExpiringLicenses)
+                                {
+                                    var days = c.DaysUntilExpiry;
+                                    <tr>
+                                        <td><div class="hub-co-cell"><div class="hub-co-av">@string.Concat((c.CompanyName ?? "??").Split(' ').Take(2).Select(w => w.FirstOrDefault())).ToUpper()</div><div><div class="hub-co-name">@c.CompanyName</div></div></div></td>
+                                        <td style="color:var(--text-muted);font-size:.75rem">@c.LicenseExpiryDate.ToString("dd MMM yyyy")</td>
+                                        <td><span class="hub-badge @(days <= 7 ? "expired" : "expiring")"><span class="hub-dot"></span>@days days</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- Credit overview -->
+            <div class="hub-card hub-anim">
+                <div class="hub-card-head">
+                    <div class="hub-card-icon cyan">💳</div>
+                    <div><div class="hub-card-title">Credit Overview</div><div class="hub-card-sub">Across all clients</div></div>
+                </div>
+                <div class="hub-card-body">
+                    <div class="hub-g2" style="gap:12px;margin-bottom:18px">
+                        @foreach (var (label, val, colour) in new[]{
+                                                ("Purchased", Model.TotalCreditsPurchased.ToString("N0"), "#081B38"),
+                                                ("Used",      Model.TotalCreditsUsed.ToString("N0"),      "#EF4444"),
+                                                ("Active",    Model.TotalCreditsInCirculation.ToString("N0"), "#00C2CB"),
+                                                ("Use Rate",  creditUsePct + "%",                          creditUsePct>80?"#EF4444":"#10B981")
+                                                })
+                        {
+                            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:12px 14px">
+                                <div style="font-size:.5625rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#94A3B8;margin-bottom:4px">@label</div>
+                                <div style="font-family:'Montserrat',sans-serif;font-size:1.25rem;font-weight:800;letter-spacing:-.04em;color:@colour">@val</div>
+                            </div>
+                        }
+                    </div>
+                    <div style="margin-bottom:6px;display:flex;justify-content:space-between;font-size:.75rem;font-weight:600;color:var(--text-muted)">
+                        <span>Credit Utilisation</span><span>@creditUsePct%</span>
+                    </div>
+                    <div class="hub-credit-bar">
+                        <div class="hub-credit-fill" style="width:@creditUsePct%;background:@(creditUsePct > 80 ? "var(--danger)" : "linear-gradient(90deg,var(--cyan),var(--cyan-deep))")"></div>
+                    </div>
+
+                    @if (Model.LowCreditClients.Any())
+                    {
+                        <div style="margin-top:14px">
+                            <div style="font-size:.6875rem;font-weight:700;color:var(--warning);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">⚠ Low Credit Clients</div>
+                            @foreach (var c in Model.LowCreditClients.Take(3))
+                            {
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#FEF3C7;border-radius:8px;margin-bottom:4px;font-size:.8125rem">
+                                    <span style="font-weight:600;color:#92400E">@c.CompanyName</span>
+                                    <a href="@Url.Action("Details", "ClientCompany", new { id = c.CompanyId })" class="hub-btn hub-btn-ghost hub-btn-xs">Manage</a>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Recent clients + Recent transactions -->
+        <div class="hub-g2" style="margin-bottom:20px">
+            <!-- Recent clients -->
+            <div class="hub-card hub-anim">
+                <div class="hub-card-head">
+                    <div class="hub-card-icon navy">🏢</div>
+                    <div><div class="hub-card-title">Recent Clients</div><div class="hub-card-sub">Latest onboarded</div></div>
+                    <div class="hub-card-action"><a href="@Url.Action("Index", "ClientCompany")" class="hub-btn hub-btn-ghost hub-btn-xs">All clients</a></div>
+                </div>
+                @if (!Model.RecentClients.Any())
+                {
+                    <div class="hub-empty" style="padding:30px"><div class="hub-empty-icon">🏢</div><div class="hub-empty-desc">No clients yet</div></div>
+                }
+                else
+                {
+                    <div class="hub-table-wrap">
+                        <table class="hub-table">
+                            <thead><tr><th>Company</th><th>Status</th><th>Expires</th><th></th></tr></thead>
+                            <tbody>
+                                @foreach (var c in Model.RecentClients)
+                                {
+                                    var statusCls = c.LicenseStatus == LicenseStatus.Active ? "active"
+                                    : c.LicenseStatus == LicenseStatus.Trial ? "trial"
+                                    : c.LicenseStatus == LicenseStatus.Expired ? "expired" : "expiring";
+                                    <tr>
+                                        <td><div class="hub-co-cell"><div class="hub-co-av">@string.Concat((c.CompanyName ?? "??").Split(' ').Take(2).Select(w => w.FirstOrDefault())).ToUpper()</div><div><div class="hub-co-name">@c.CompanyName</div><div class="hub-co-type">@c.CompanyType</div></div></div></td>
+                                        <td><span class="hub-badge @statusCls"><span class="hub-dot"></span>@c.LicenseStatus</span></td>
+                                        <td style="font-size:.75rem;color:var(--text-muted)">@c.LicenseExpiryDate.ToString("dd MMM yy")</td>
+                                        <td><a href="@Url.Action("Details", "ClientCompany", new { id = c.CompanyId })" class="hub-btn hub-btn-ghost hub-btn-xs">View</a></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- Recent credit transactions -->
+            <div class="hub-card hub-anim">
+                <div class="hub-card-head">
+                    <div class="hub-card-icon green">💳</div>
+                    <div><div class="hub-card-title">Recent Transactions</div><div class="hub-card-sub">Latest credit activity</div></div>
+                </div>
+                @if (!Model.RecentCreditTransactions.Any())
+                {
+                    <div class="hub-empty" style="padding:30px"><div class="hub-empty-icon">📋</div><div class="hub-empty-desc">No transactions yet</div></div>
+                }
+                else
+                {
+                    <div class="hub-table-wrap">
+                        <table class="hub-table">
+                            <thead><tr><th>Company</th><th>Type</th><th>Credits</th><th>Date</th></tr></thead>
+                            <tbody>
+                                @foreach (var t in Model.RecentCreditTransactions)
+                                {
+                                    var isSpend = t.TransactionType == CreditTransactionType.Spend;
+                                    <tr>
+                                        <td style="font-weight:600;font-size:.8125rem">@(t.Company?.CompanyName ?? "—")</td>
+                                        <td>
+                                            <span class="hub-badge @(isSpend ? "rejected" : "approved")">
+                                                <span class="hub-dot"></span>@t.TransactionType
+                                            </span>
+                                        </td>
+                                        <td style="font-family:'Montserrat',sans-serif;font-weight:800;color:@(isSpend ? "var(--danger)" : "var(--success)")">
+                                            @(isSpend ? "-" : "+")@t.CreditsAmount
+                                        </td>
+                                        <td style="font-size:.75rem;color:var(--text-muted)">@t.TransactionDate.ToString("dd MMM HH:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Row 3: Demo funnel + Security status -->
+        <div class="hub-g2">
+            <!-- Demo funnel -->
+            <div class="hub-card hub-anim">
+                <div class="hub-card-head">
+                    <div class="hub-card-icon purple">📅</div>
+                    <div><div class="hub-card-title">Demo Pipeline</div><div class="hub-card-sub">Conversion rate: @Model.ConversionRate.ToString("F1")%</div></div>
+                    <div class="hub-card-action"><a href="@Url.Action("ManageDemoRequest", "DemoRequest")" class="hub-btn hub-btn-ghost hub-btn-xs">Manage</a></div>
+                </div>
+                <div class="hub-card-body">
+                    <div class="hub-g4" style="gap:10px">
+                        @foreach (var (label, val, emoji, bg) in new[]{
+                                                ("Pending",   Model.PendingDemoRequests, "⏳", "rgba(245,158,11,.08)"),
+                                                ("Scheduled", Model.ScheduledDemos,      "📅", "rgba(59,130,246,.08)"),
+                                                ("Completed", Model.CompletedDemos,      "✅", "rgba(16,185,129,.08)"),
+                                                ("Converted", Model.ConvertedDemos,      "🚀", "rgba(0,194,203,.08)")
+                                                })
+                        {
+                            <div style="background:@bg;border-radius:10px;padding:14px 12px;text-align:center">
+                                <div style="font-size:20px;margin-bottom:4px">@emoji</div>
+                                <div style="font-family:'Montserrat',sans-serif;font-size:1.375rem;font-weight:800;color:#081B38">@val</div>
+                                <div style="font-size:.5625rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748B;margin-top:2px">@label</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security status -->
+            <div class="hub-card hub-anim">
+                <div class="hub-card-head">
+                    <div class="hub-card-icon green">🔐</div>
+                    <div><div class="hub-card-title">Security Status</div><div class="hub-card-sub">Active protections</div></div>
+                </div>
+                <div class="hub-card-body">
+                    @foreach (var (label, desc, active) in new[]{
+                                        ("AES-256 Encryption",    "Sensitive fields encrypted at rest",               true),
+                                        ("HMAC-SHA256 Signing",   "Per-request API signature verification",           true),
+                                        ("Replay Attack Guard",   "Nonce cache + timestamp window (±5 min)",          true),
+                                        ("Rate Limiting",         "120 requests/min per company",                     true),
+                                        ("Security Headers",     "X-Frame, X-XSS, CSP, Referrer-Policy active",      true),
+                                        ("Audit Trail",           "All API calls logged to ApiAuditLogs",             true)
+                                        })
+                    {
+                        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F1F5F9">
+                            <div style="width:28px;height:28px;border-radius:7px;background:rgba(16,185,129,.1);color:#065F46;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">✓</div>
+                            <div style="flex:1">
+                                <div style="font-size:.8125rem;font-weight:700;color:#1E293B">@label</div>
+                                <div style="font-size:.6875rem;color:#94A3B8;font-weight:500">@desc</div>
+                            </div>
+                            <span class="hub-badge active"><span class="hub-dot"></span>Active</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Auto-dismiss alerts
+        setTimeout(function(){
+          document.querySelectorAll('.hub-alert').forEach(function(a){
+            a.style.transition='opacity .3s';a.style.opacity='0';
+            setTimeout(function(){a.remove()},300);
+          });
+        },5000);
+    </script>
 </body>
 </html>

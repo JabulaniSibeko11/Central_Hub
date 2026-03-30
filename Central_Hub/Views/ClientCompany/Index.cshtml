@@ -1,240 +1,224 @@
-﻿@model IEnumerable<ClientCompany>
-
+﻿@model IEnumerable<Central_Hub.Models.ClientCompany>
+@using Central_Hub.Models
 @{
-    ViewData["Title"] = "Client Companies";
-    var searchTerm = ViewBag.SearchTerm ?? "";
-    var selectedStatus = ViewBag.SelectedStatus ?? "all";
     Layout = null;
+    ViewData["Title"] = "Clients — Declarify Central Hub";
+    var searchTerm     = ViewBag.SearchTerm as string ?? "";
+    var selectedStatus = ViewBag.SelectedStatus as string ?? "all";
+    var adminName      = User.Identity?.Name ?? "Admin";
+    var initials       = string.Concat(adminName.Split(' ').Take(2).Select(w => w.FirstOrDefault())).ToUpper();
+    if (string.IsNullOrEmpty(initials)) initials = "CA";
+    var companies = Model.ToList();
 }
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"] - Declarify</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="~/css/companyindexcss.css" rel="stylesheet" />
-    <!-- Heroicons -->
-    <script src="https://unpkg.com/heroicons@2.0.18/outline/index.js"></script>
-
-   
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>@ViewData["Title"]</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="~/css/hubcss.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Decorative Background -->
-    <div class="bg-glow"></div>
 
-    <div class="container">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-title">
-                Client <span class="page-title-accent">Companies</span>
-            </h1>
-            <p class="page-subtitle">
-                Manage client organizations, licensing, and compliance tracking across your Declarify network.
-            </p>
-        </div>
+<!-- ── Navbar ──────────────────────────────────────────────── -->
+<nav class="hub-nav">
+  <div class="hub-nav-inner">
+    <a href="@Url.Action("Index","Home")" class="hub-brand">
+      <img src="~/images/declarify logo.png" alt="Declarify" class="hub-brand-img" />
+      <div><div class="hub-brand-text">Declar<span>ify</span></div><div class="hub-brand-sub">Central Hub</div></div>
+    </a>
+    <span class="hub-env-badge prod">● Production</span>
+    <div class="hub-nav-links" style="margin-left:24px">
+      <a href="@Url.Action("Index","Home")" class="hub-nav-link">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75"/></svg>
+        Dashboard
+      </a>
+      <a href="@Url.Action("Index","ClientCompany")" class="hub-nav-link active">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18"/></svg>
+        Clients
+      </a>
+      <a href="@Url.Action("ManageDemoRequest","DemoRequest")" class="hub-nav-link">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/></svg>
+        Demos
+      </a>
+      <a href="@Url.Action("RequestedCredits","Home")" class="hub-nav-link">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15"/></svg>
+        Credits
+      </a>
+    </div>
+    <div class="hub-nav-right">
+      <div class="hub-nav-user">
+        <div class="hub-nav-av">@initials</div>
+        <div><div class="hub-nav-name">@adminName</div><div class="hub-nav-role">Central Admin</div></div>
+      </div>
+    </div>
+  </div>
+</nav>
 
-        <!-- Statistics Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Total Companies</div>
-                <div class="stat-value">@Model.Count()</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Active Licenses</div>
-                <div class="stat-value">@Model.Count(c => c.LicenseStatus == LicenseStatus.Active)</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Expired</div>
-                <div class="stat-value">@Model.Count(c => c.LicenseStatus == LicenseStatus.Expired)</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Pending Setup</div>
-                <div class="stat-value">@Model.Count(c => c.LicenseStatus == LicenseStatus.Trial)</div>
-            </div>
-        </div>
+<!-- ── Hero ────────────────────────────────────────────────── -->
+<div class="hub-hero">
+  <div class="hub-hero-inner">
+    <div>
+      <div class="hub-hero-eyebrow">🏢 Client Management</div>
+      <h1 class="hub-hero-title">Client <span>Companies</span></h1>
+      <p class="hub-hero-desc">Manage licenses, credits, and compliance settings for all Declarify clients.</p>
+      <div class="hub-hero-actions">
+        <a href="@Url.Action("Create","ClientCompany")" class="hub-btn hub-btn-cyan">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          New Client
+        </a>
+        <a href="@Url.Action("Index","Home")" class="hub-btn hub-btn-ghost" style="color:#fff;border-color:rgba(255,255,255,.25)">← Dashboard</a>
+      </div>
+    </div>
+    <div class="hub-hero-stat">
+      <div class="hub-hero-stat-val">@companies.Count(c => c.LicenseStatus == LicenseStatus.Active)<span>/</span>@companies.Count</div>
+      <div class="hub-hero-stat-lbl">Active / Total</div>
+    </div>
+  </div>
+</div>
 
-        <!-- Search and Filter Controls -->
-        <div class="controls-section">
-            <form method="get" asp-action="Index">
-                <div class="controls-grid">
-                    <div class="form-group">
-                        <label class="form-label" for="searchTerm">Search Companies</label>
-                        <input type="text"
-                               id="searchTerm"
-                               name="searchTerm"
-                               class="form-input"
-                               placeholder="Search by company name, email domain, or license key..."
-                               value="@searchTerm" />
-                    </div>
+<!-- ── KPI strip ────────────────────────────────────────────── -->
+<div class="hub-kpi-strip">
+  <div class="hub-kpi-inner">
+    <div class="hub-kpi navy"><div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15"/></svg></div><div><div class="hub-kpi-val">@companies.Count</div><div class="hub-kpi-lbl">Total</div></div><div class="hub-kpi-accent"></div></div>
+    <div class="hub-kpi green"><div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div><div class="hub-kpi-val">@companies.Count(c => c.LicenseStatus == LicenseStatus.Active)</div><div class="hub-kpi-lbl">Active</div></div><div class="hub-kpi-accent"></div></div>
+    <div class="hub-kpi amber"><div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div><div class="hub-kpi-val">@companies.Count(c => c.LicenseStatus == LicenseStatus.Trial)</div><div class="hub-kpi-lbl">Trial</div></div><div class="hub-kpi-accent"></div></div>
+    <div class="hub-kpi red"><div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div><div class="hub-kpi-val">@companies.Count(c => c.LicenseStatus == LicenseStatus.Expired)</div><div class="hub-kpi-lbl">Expired</div></div><div class="hub-kpi-accent"></div></div>
+    <div class="hub-kpi cyan"><div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71"/></svg></div><div><div class="hub-kpi-val">@companies.Count(c => c.IsExpiringSoon)</div><div class="hub-kpi-lbl">Expiring Soon</div></div><div class="hub-kpi-accent"></div></div>
+  </div>
+</div>
 
-                    <div class="form-group">
-                        <label class="form-label" for="status">Filter by Status</label>
-                        <select id="status" name="status" class="form-input">
-                            <option value="all" selected="@(selectedStatus == "all")">All Status</option>
-                            <option value="Active" selected="@(selectedStatus == "Active")">Active</option>
-                            <option value="Expired" selected="@(selectedStatus == "Expired")">Expired</option>
-                            <option value="Pending" selected="@(selectedStatus == "Pending")">Pending</option>
-                        </select>
-                    </div>
+<!-- ── Main ─────────────────────────────────────────────────── -->
+<div class="hub-main">
 
-                    <button type="submit" class="btn-primary">
-                        Apply Filters
-                    </button>
-                </div>
-            </form>
-        </div>
+  @if (TempData["Success"] != null) {
+    <div class="hub-alert success"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>@TempData["Success"]</div>
+  }
+  @if (TempData["Error"] != null) {
+    <div class="hub-alert error"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>@TempData["Error"]</div>
+  }
 
-        <!-- Companies Table -->
-        <div class="table-container">
-            @if (Model.Any())
-            {
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Company Name</th>
-                                <th>Email Domain</th>
-                                <th>Administrator</th>
-                                <th>License Key</th>
-                                <th>Status</th>
-                                <th>Created Date</th>
-                                <th>Employees</th>
-                                <th>Credits</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var company in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <strong>@company.CompanyName</strong>
-                                    </td>
-                                    <td>
-                                        <code style="font-size: 0.875rem; color: var(--color-text-muted);">
-                                            @@@company.EmailDomain
-                                        </code>
-                                    </td>
-                                    <td>
-                                        @if (company.Administrator != null)
-                                        {
-                                            <div>
-                                                <div style="font-weight: 600;">@company.Administrator.FullName</div>
-                                                <div style="font-size: 0.813rem; color: var(--color-text-muted);">
-                                                    @company.Administrator.Email
-                                                </div>
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <span style="color: var(--color-text-muted);">Not Assigned</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <span class="license-key">@company.LicenseKey</span>
-                                    </td>
-                                    <td>
-                                        @switch (company.LicenseStatus)
-                                        {
-                                            case LicenseStatus.Active:
-                                                <span class="status-badge status-active">
-                                                    <span class="status-dot"></span>
-                                                    Active
-                                                </span>
-                                                break;
-                                            case LicenseStatus.Expired:
-                                                <span class="status-badge status-expired">
-                                                    <span class="status-dot"></span>
-                                                    Expired
-                                                </span>
-                                                break;
-                                            case LicenseStatus.Trial:
-                                                <span class="status-badge status-pending">
-                                                    <span class="status-dot"></span>
-                                                    Pending
-                                                </span>
-                                                break;
-                                        }
-                                    </td>
-                                    <td>
-                                        <div>@company.CreatedDate.ToString("MMM dd, yyyy")</div>
-                                        <div style="font-size: 0.813rem; color: var(--color-text-muted);">
-                                            @company.CreatedDate.ToString("hh:mm tt")
-                                        </div>
-                                    </td>
-                                    <td style="text-align: center; font-weight: 600;">
-                                        @(company.EstimatedEmployeeCount ?? 0)
-                                    </td>
-                                    <td style="text-align: center;">
-                                        <div style="font-weight: 600; color: var(--color-accent);">
-                                          @*   @(company.CreditBatches. ?? 0) *@
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button class="btn-icon btn-view"
-                                                    title="View Details"
-                                                    onclick="location.href='@Url.Action("Details", new { id = company.CompanyId })'">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
-                                            </button>
-                                            <button class="btn-icon btn-edit"
-                                                    title="Edit Company"
-                                                    onclick="location.href='@Url.Action("Edit", new { id = company.CompanyId })'">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                                                </svg>
-                                            </button>
-                                            <button class="btn-icon btn-delete"
-                                                    title="Delete Company"
-                                                    onclick="if(confirm('Are you sure you want to delete @company.CompanyName?')) location.href='@Url.Action("Delete", new { id = company.CompanyId })'">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div class="empty-state">
-                    <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    <h3 class="empty-state-title">No Companies Found</h3>
-                    <p class="empty-state-text">
-                        @if (!string.IsNullOrEmpty(searchTerm) || selectedStatus != "all")
-                        {
-                            <text>Try adjusting your search or filter criteria.</text>
-                        }
-                        else
-                        {
-                            <text>Get started by adding your first client company.</text>
-                        }
-                    </p>
-                </div>
-            }
-        </div>
+  <div class="hub-card hub-anim">
+    <!-- Search & filter toolbar -->
+    <div class="hub-card-head" style="padding:14px 18px;flex-wrap:wrap;gap:10px">
+      <div style="position:relative;flex:1;min-width:200px">
+        <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:#94A3B8;pointer-events:none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" class="hub-input" value="@searchTerm"
+               style="padding-left:34px;border-radius:50px;font-size:.8125rem"
+               placeholder="Search by name, domain, or registration…" oninput="filterTable()" />
+      </div>
+                <select id="statusFilter" class="hub-select"
+                        style="min-width:150px;border-radius:50px;font-size:.8125rem;width:auto"
+                        onchange="filterTable()">
+
+                    <option value="all" selected="@(selectedStatus == "all")">All Statuses</option>
+                    <option value="Active" selected="@(selectedStatus == "Active")">Active</option>
+                    <option value="Trial" selected="@(selectedStatus == "Trial")">Trial</option>
+                    <option value="Expired" selected="@(selectedStatus == "Expired")">Expired</option>
+                    <option value="ExpiringSoon" selected="@(selectedStatus == "ExpiringSoon")">Expiring Soon</option>
+
+                </select>
+      <span id="countLabel" style="font-size:.75rem;font-weight:600;color:var(--text-muted);white-space:nowrap">
+        @companies.Count client@(companies.Count!=1?"s":"")
+      </span>
     </div>
 
-    <!-- Floating Add New Button -->
-    <button class="btn-add-new" title="Add New Company" onclick="location.href='@Url.Action("Create")'">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-    </button>
+    <!-- Table -->
+    @if (!companies.Any()) {
+      <div class="hub-empty">
+        <div class="hub-empty-icon">🏢</div>
+        <div class="hub-empty-title">No clients yet</div>
+        <div class="hub-empty-desc">Add your first client to get started.</div>
+        <a href="@Url.Action("Create","ClientCompany")" class="hub-btn hub-btn-primary" style="margin-top:8px">+ New Client</a>
+      </div>
+    } else {
+      <div class="hub-table-wrap">
+        <table class="hub-table" id="clientTable">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Type</th>
+              <th>License Key</th>
+              <th>Status</th>
+              <th>Expires</th>
+              <th>Security</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var c in companies) {
+              var statusCls = c.LicenseStatus == LicenseStatus.Active      ? "active"
+                            : c.LicenseStatus == LicenseStatus.Trial        ? "trial"
+                            : c.LicenseStatus == LicenseStatus.Expired      ? "expired"
+                            : c.LicenseStatus == LicenseStatus.ExpiringSoon ? "expiring"
+                            : "pending";
+              var maskedKey = c.LicenseKey?.Length > 8
+                            ? c.LicenseKey[..4] + "****" + c.LicenseKey[^4..]
+                            : "••••••••";
+              <tr data-name="@c.CompanyName?.ToLower()"
+                  data-status="@c.LicenseStatus">
+                <td>
+                  <div class="hub-co-cell">
+                    <div class="hub-co-av">@string.Concat((c.CompanyName??"??").Split(' ').Take(2).Select(w=>w.FirstOrDefault())).ToUpper()</div>
+                    <div>
+                      <div class="hub-co-name">@c.CompanyName</div>
+                      <div class="hub-co-type">@c.EmailDomain</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="font-size:.75rem;color:var(--text-muted);font-weight:500">@c.CompanyType</td>
+                <td>
+                  <code style="font-family:monospace;font-size:.75rem;background:#F1F5F9;padding:3px 7px;border-radius:5px;color:#475569">@maskedKey</code>
+                </td>
+                <td><span class="hub-badge @statusCls"><span class="hub-dot"></span>@c.LicenseStatus</span></td>
+                <td style="font-size:.75rem;color:@(c.IsExpiringSoon?"var(--warning)":c.IsExpired?"var(--danger)":"var(--text-muted)");font-weight:@(c.IsExpiringSoon||c.IsExpired?"700":"500")">
+                  @c.LicenseExpiryDate.ToString("dd MMM yyyy")
+                  @if (c.IsExpiringSoon) { <span style="margin-left:4px">⚠</span> }
+                </td>
+                <td>
+                  <span class="hub-badge @(c.IsActive ? "hmac" : "legacy")" title="@(c.IsActive ? "HMAC signing active" : "Legacy auth")">
+                    @(c.IsActive ? "🔐 HMAC" : "🔑 Legacy")
+                  </span>
+                </td>
+                <td style="text-align:right">
+                  <div style="display:flex;gap:6px;justify-content:flex-end">
+                    <a href="@Url.Action("Details","ClientCompany",new{id=c.CompanyId})" class="hub-btn hub-btn-ghost hub-btn-xs">View</a>
+                    <a href="@Url.Action("Edit","ClientCompany",new{id=c.CompanyId})" class="hub-btn hub-btn-ghost hub-btn-xs">Edit</a>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<script>
+function filterTable() {
+  var q      = document.getElementById('searchInput').value.toLowerCase();
+  var status = document.getElementById('statusFilter').value.toLowerCase();
+  var rows   = document.querySelectorAll('#clientTable tbody tr');
+  var shown  = 0;
+  rows.forEach(function(r) {
+    var name    = r.dataset.name || '';
+    var rstatus = (r.dataset.status || '').toLowerCase();
+    var matchQ  = !q      || name.includes(q) || r.textContent.toLowerCase().includes(q);
+    var matchS  = status === 'all' || rstatus === status.toLowerCase() ||
+                  (status === 'expiringsoon' && rstatus === 'expiringsoon');
+    r.style.display = matchQ && matchS ? '' : 'none';
+    if (matchQ && matchS) shown++;
+  });
+  var lbl = document.getElementById('countLabel');
+  if (lbl) lbl.textContent = shown + ' client' + (shown !== 1 ? 's' : '');
+}
+setTimeout(function(){
+  document.querySelectorAll('.hub-alert').forEach(function(a){
+    a.style.transition='opacity .3s';a.style.opacity='0';
+    setTimeout(function(){a.remove()},300);
+  });
+},5000);
+</script>
 </body>
 </html>

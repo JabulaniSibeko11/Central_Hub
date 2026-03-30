@@ -1,405 +1,456 @@
-﻿@model List<CreditRequest>
-
+﻿@model List<Central_Hub.Models.CreditRequest>
+@using Central_Hub.Models
 @{
-    ViewData["Title"] = "Credit Requests";
-    var searchTerm = ViewBag.SearchTerm ?? "";
-    var selectedStatus = ViewBag.SelectedStatus ?? "all";
+    ViewData["Title"] = "Credit Requests — Declarify Central Hub";
     Layout = null;
-}
 
+    var searchTerm     = ViewBag.SearchTerm as string ?? "";
+    var selectedStatus = ViewBag.SelectedStatus as string ?? "all";
+    var adminName      = User.Identity?.Name ?? "Admin";
+    var initials       = string.Concat(adminName.Split(' ').Take(2).Select(w => w.FirstOrDefault())).ToUpper();
+    if (string.IsNullOrEmpty(initials)) initials = "CA";
+
+    var total    = Model.Count;
+    var pending  = Model.Count(c => c.Status == CreditRequestStatus.Pending);
+    var approved = Model.Count(c => c.Status == CreditRequestStatus.Approved);
+    var rejected = Model.Count(c => c.Status == CreditRequestStatus.Rejected);
+    var paid     = Model.Count(c => c.Status == CreditRequestStatus.Paid);
+    var totalCreditsRequested = Model.Sum(c => c.RequestedCredits);
+    var totalRevenue = Model.Where(c => c.AmountToPay.HasValue && c.Status == CreditRequestStatus.Approved)
+                            .Sum(c => c.AmountToPay!.Value);
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"] - Declarify</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="~/css/creditrequestscss.css" rel="stylesheet" />
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>@ViewData["Title"]</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="~/css/hubcss.css" rel="stylesheet">
+    <link href="~/css/creditrequestscss1.css" rel="stylesheet" />
 </head>
 <body>
-    <!-- Decorative Background -->
-    <div class="bg-glow"></div>
 
-    <div class="container">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-title">
-                Credit <span class="page-title-accent">Requests</span>
-            </h1>
-            <p class="page-subtitle">
-                Review and manage credit purchase requests from client companies across your Declarify network.
-            </p>
+<!-- ── Navbar ──────────────────────────────────────────────── -->
+<nav class="hub-nav">
+  <div class="hub-nav-inner">
+    <a href="@Url.Action("Index","Home")" class="hub-brand">
+      <img src="~/images/declarify logo.png" alt="Declarify" class="hub-brand-img" />
+      <div><div class="hub-brand-text">Declar<span>ify</span></div><div class="hub-brand-sub">Central Hub</div></div>
+    </a>
+    <span class="hub-env-badge prod" style="margin-left:8px">● Production</span>
+    <div class="hub-nav-links" style="margin-left:20px">
+      <a href="@Url.Action("Index","Home")" class="hub-nav-link">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12"/></svg>
+        Dashboard
+      </a>
+      <a href="@Url.Action("Index","ClientCompany")" class="hub-nav-link">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15"/></svg>
+        Clients
+      </a>
+      <a href="@Url.Action("ManageDemoRequest","DemoRequest")" class="hub-nav-link">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5"/></svg>
+        Demos
+      </a>
+      <a href="@Url.Action("RequestedCredits","Home")" class="hub-nav-link active">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15"/></svg>
+        Credits
+        @if (pending > 0) {
+          <span style="background:var(--danger);color:#fff;font-size:.5rem;font-weight:800;padding:1px 5px;border-radius:99px">@pending</span>
+        }
+      </a>
+    </div>
+    <div class="hub-nav-right">
+      <div class="hub-nav-user">
+        <div class="hub-nav-av">@initials</div>
+        <div><div class="hub-nav-name">@adminName</div><div class="hub-nav-role">Central Admin</div></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────────────── -->
+<div class="hub-hero">
+  <div class="hub-hero-inner">
+    <div>
+      <div class="hub-hero-eyebrow">💳 Credit Management</div>
+      <h1 class="hub-hero-title">Credit <span>Requests</span></h1>
+      <p class="hub-hero-desc">Review and approve credit purchase requests from client organisations. Pending requests require your action before credits are allocated.</p>
+    </div>
+    <div class="hub-hero-stat">
+      <div class="hub-hero-stat-val">@totalCreditsRequested.ToString("N0")<span> cr</span></div>
+      <div class="hub-hero-stat-lbl">Total Credits Requested</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── KPI Strip ─────────────────────────────────────────────── -->
+<div class="hub-kpi-strip">
+  <div class="hub-kpi-inner">
+    <div class="hub-kpi navy">
+      <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75"/></svg></div>
+      <div><div class="hub-kpi-val">@total</div><div class="hub-kpi-lbl">Total Requests</div></div>
+      <div class="hub-kpi-accent"></div>
+    </div>
+    <div class="hub-kpi @(pending > 0 ? "amber" : "green")">
+      <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div><div class="hub-kpi-val">@pending</div><div class="hub-kpi-lbl">Pending Review</div></div>
+      <div class="hub-kpi-accent"></div>
+    </div>
+    <div class="hub-kpi green">
+      <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div><div class="hub-kpi-val">@approved</div><div class="hub-kpi-lbl">Approved</div></div>
+      <div class="hub-kpi-accent"></div>
+    </div>
+    <div class="hub-kpi @(rejected > 0 ? "red" : "navy")">
+      <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div><div class="hub-kpi-val">@rejected</div><div class="hub-kpi-lbl">Rejected</div></div>
+      <div class="hub-kpi-accent"></div>
+    </div>
+    <div class="hub-kpi cyan">
+      <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg></div>
+      <div>
+        <div class="hub-kpi-val">R @totalRevenue.ToString("N0")</div>
+        <div class="hub-kpi-lbl">Revenue Approved</div>
+      </div>
+      <div class="hub-kpi-accent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ──────────────────────────────────────────────────── -->
+<div class="hub-main">
+
+  @if (TempData["Success"] != null) {
+    <div class="hub-alert success" style="margin-bottom:16px">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      @TempData["Success"]
+    </div>
+  }
+  @if (TempData["Error"] != null) {
+    <div class="hub-alert error" style="margin-bottom:16px">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      @TempData["Error"]
+    </div>
+  }
+
+  <div class="hub-card hub-anim">
+
+    <!-- ── Toolbar ─────────────────────────────────────────── -->
+    <div class="hub-card-head" style="padding:12px 18px;flex-wrap:wrap;gap:10px">
+      <!-- Status pills -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1">
+        @foreach (var (lbl, val, cnt) in new[]{
+          ("All", "all", total),
+          ("Pending", "Pending", pending),
+          ("Approved", "Approved", approved),
+          ("Rejected", "Rejected", rejected),
+          ("Paid", "Paid", paid)
+        }) {
+        
+    var linkStyle = selectedStatus == val
+        ? "background:var(--navy);color:#fff;"
+        : "background:var(--canvas);color:var(--muted);border:1.5px solid var(--border);";
+
+    var badgeStyle = selectedStatus == val
+        ? "background:rgba(255,255,255,.2);color:#fff;"
+        : "background:var(--border);color:var(--muted);";
+
+
+<a href="@Url.Action("RequestedCredits", new { status = val, searchTerm = searchTerm })"
+   style="display:inline-flex;
+          align-items:center;
+          gap:5px;
+          padding:6px 13px;
+          border-radius:50px;
+          font-size:.75rem;
+          font-weight:700;
+          text-decoration:none;
+          transition:all .18s;
+          @linkStyle">
+
+    @lbl
+
+    <span style="padding:1px 5px;
+                 border-radius:99px;
+                 font-size:.5625rem;
+                 font-weight:900;
+                 @badgeStyle">
+        @cnt
+    </span>
+
+</a>
+        }
+      </div>
+
+      <!-- Search form -->
+      <form method="get" asp-action="RequestedCredits" style="display:flex;gap:8px;align-items:center">
+        <input type="hidden" name="status" value="@selectedStatus" />
+        <div style="position:relative">
+          <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:#94A3B8;pointer-events:none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" name="searchTerm" value="@searchTerm"
+                 class="hub-input" placeholder="Search company, reference, requester…"
+                 style="padding-left:32px;border-radius:50px;font-size:.8125rem;width:240px" />
         </div>
-
-        <!-- Statistics Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Total Requests</div>
-                <div class="stat-value">@Model.Count()</div>
-            </div>
-            <div class="stat-card stat-pending">
-                <div class="stat-label">Pending Review</div>
-                <div class="stat-value">@Model.Count(c => c.Status == CreditRequestStatus.Pending)</div>
-            </div>
-            <div class="stat-card stat-approved">
-                <div class="stat-label">Approved</div>
-                <div class="stat-value">@Model.Count(c => c.Status == CreditRequestStatus.Approved)</div>
-            </div>
-            <div class="stat-card stat-rejected">
-                <div class="stat-label">Rejected</div>
-                <div class="stat-value">@Model.Count(c => c.Status == CreditRequestStatus.Rejected)</div>
-            </div>
-        </div>
-
-        <!-- Search and Filter Controls -->
-        <div class="controls-section">
-            <form method="get" asp-action="RequestedCredits">
-                <div class="controls-grid">
-                    <div class="form-group">
-                        <label class="form-label" for="searchTerm">Search Requests</label>
-                        <input type="text"
-                               id="searchTerm"
-                               name="searchTerm"
-                               class="form-input"
-                               placeholder="Search by company name, reference, or requester..."
-                               value="@searchTerm" />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="status">Filter by Status</label>
-                        <select id="status" name="status" class="form-input">
-                            <option value="all" selected="@(selectedStatus == "all")">All Status</option>
-                            <option value="Pending" selected="@(selectedStatus == "Pending")">Pending</option>
-                            <option value="Approved" selected="@(selectedStatus == "Approved")">Approved</option>
-                            <option value="Rejected" selected="@(selectedStatus == "Rejected")">Rejected</option>
-                            <option value="Paid" selected="@(selectedStatus == "Paid")">Paid</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn-primary">
-                        Apply Filters
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Requests Table -->
-        <div class="table-container">
-            @if (Model.Any())
-            {
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Reference</th>
-                                <th>Company</th>
-                                <th>Requested By</th>
-                                <th>Credits</th>
-                                <th>Amount</th>
-                                <th>Reason</th>
-                                <th>Request Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var request in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <code class="reference-code">@request.RequestReference</code>
-                                    </td>
-                                    <td>
-                                        <strong>@request.Company.CompanyName</strong>
-                                    </td>
-                                    <td>
-                                        <div>
-                                            <div style="font-weight: 600;">@request.RequestedBy</div>
-                                            <div style="font-size: 0.813rem; color: var(--color-text-muted);">
-                                                @request.RequesterEmail
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="text-align: center;">
-                                        <div class="credits-badge">
-                                            @request.RequestedCredits.ToString("N0")
-                                        </div>
-                                    </td>
-                                    <td style="text-align: right; font-weight: 600;">
-                                        @if (request.AmountToPay.HasValue)
-                                        {
-                                            <span class="amount-value">R @request.AmountToPay.Value.ToString("N2")</span>
-                                        }
-                                        else
-                                        {
-                                            <span style="color: var(--color-text-muted);">-</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(request.Reason))
-                                        {
-                                            <div class="reason-text" title="@request.Reason">
-                                                @(request.Reason.Length > 50 ? request.Reason.Substring(0, 50) + "..." : request.Reason)
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <span style="color: var(--color-text-muted);">-</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div>@request.RequestDate.ToString("MMM dd, yyyy")</div>
-                                        <div style="font-size: 0.813rem; color: var(--color-text-muted);">
-                                            @request.RequestDate.ToString("hh:mm tt")
-                                        </div>
-                                    </td>
-                                    <td>
-                                        @switch (request.Status)
-                                        {
-                                            case CreditRequestStatus.Pending:
-                                                <span class="status-badge status-pending">
-                                                    <span class="status-dot"></span>
-                                                    Pending
-                                                </span>
-                                                break;
-                                            case CreditRequestStatus.Approved:
-                                                <span class="status-badge status-approved">
-                                                    <span class="status-dot"></span>
-                                                    Approved
-                                                </span>
-                                                break;
-                                            case CreditRequestStatus.Rejected:
-                                                <span class="status-badge status-rejected">
-                                                    <span class="status-dot"></span>
-                                                    Rejected
-                                                </span>
-                                                break;
-                                            case CreditRequestStatus.Paid:
-                                                <span class="status-badge status-paid">
-                                                    <span class="status-dot"></span>
-                                                    Paid
-                                                </span>
-                                                break;
-                                        }
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            @if (request.Status == CreditRequestStatus.Pending)
-                                            {
-                                                <button class="btn-icon btn-approve"
-                                                        title="Approve Request"
-                                                        onclick="openApproveModal(@request.RequestId, '@request.RequestReference', '@request.Company.CompanyName', @request.RequestedCredits)">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                </button>
-                                                <button class="btn-icon btn-reject"
-                                                        title="Reject Request"
-                                                        onclick="openRejectModal(@request.RequestId, '@request.RequestReference', '@request.Company.CompanyName')">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                </button>
-                                            }
-                                            @* <button class="btn-icon btn-view"
-                                                    title="View Details"
-                                                    onclick="location.href='@Url.Action("Details", new { id = request.RequestId })'">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
-                                            </button> *@
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div class="empty-state">
-                    <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3 class="empty-state-title">No Credit Requests Found</h3>
-                    <p class="empty-state-text">
-                        @if (!string.IsNullOrEmpty(searchTerm) || selectedStatus != "all")
-                        {
-                            <text>Try adjusting your search or filter criteria.</text>
-                        }
-                        else
-                        {
-                            <text>There are currently no credit requests to review.</text>
-                        }
-                    </p>
-                </div>
-            }
-        </div>
+        <button type="submit" class="hub-btn hub-btn-primary hub-btn-sm">Search</button>
+        @if (!string.IsNullOrEmpty(searchTerm)) {
+          <a href="@Url.Action("RequestedCredits", new { status = selectedStatus })"
+             class="hub-btn hub-btn-ghost hub-btn-sm">Clear</a>
+        }
+      </form>
     </div>
 
-    <!-- Approve Modal -->
-    <div id="approveModal" class="modal">
-        <div class="modal-content modal-approve">
-            <div class="modal-header">
-                <h2 class="modal-title">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="28" height="28">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Approve Credit Request
-                </h2>
-                <button class="modal-close" onclick="closeApproveModal()">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="modal-info-card">
-                    <div class="info-row">
-                        <span class="info-label">Reference:</span>
-                        <span id="approveReference" class="info-value"></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Company:</span>
-                        <span id="approveCompany" class="info-value"></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Credits:</span>
-                        <span id="approveCredits" class="info-value credits-highlight"></span>
-                    </div>
-                </div>
-                <form id="approveForm" method="post" asp-action="ApproveRequest">
-                    <input type="hidden" id="approveRequestId" name="requestId" />
-                    <div class="form-group">
-                        <label class="form-label" for="approveNotes">Approval Notes (Optional)</label>
-                        <textarea id="approveNotes"
-                                  name="notes"
-                                  class="form-textarea"
-                                  rows="4"
-                                  placeholder="Add any notes or comments about this approval..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeApproveModal()">Cancel</button>
-                <button type="button" class="btn-approve-confirm" onclick="submitApprove()">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                    Approve Request
-                </button>
-            </div>
+    <!-- ── Table ───────────────────────────────────────────── -->
+    @if (!Model.Any()) {
+      <div class="hub-empty">
+        <div class="hub-empty-icon">💳</div>
+        <div class="hub-empty-title">No Credit Requests Found</div>
+        <div class="hub-empty-desc">
+          @if (!string.IsNullOrEmpty(searchTerm) || selectedStatus != "all") {
+            <text>Try adjusting your search or filter criteria.</text>
+          } else {
+            <text>No credit requests have been submitted yet.</text>
+          }
         </div>
-    </div>
+      </div>
+    } else {
+      <div class="hub-table-wrap">
+        <table class="hub-table">
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Company</th>
+              <th>Requested By</th>
+              <th style="text-align:center">Credits</th>
+              <th style="text-align:right">Amount</th>
+              <th>Reason</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var r in Model) {
+              var bc = r.Status switch {
+                CreditRequestStatus.Pending  => "pending",
+                CreditRequestStatus.Approved => "approved",
+                CreditRequestStatus.Rejected => "rejected",
+                CreditRequestStatus.Paid     => "active",
+                _                            => "pending"
+              };
+              var coInitials = string.Concat((r.Company?.CompanyName ?? "??").Split(' ').Take(2).Select(w => w.FirstOrDefault())).ToUpper();
 
-    <!-- Reject Modal -->
-    <div id="rejectModal" class="modal">
-        <div class="modal-content modal-reject">
-            <div class="modal-header">
-                <h2 class="modal-title">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="28" height="28">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Reject Credit Request
-                </h2>
-                <button class="modal-close" onclick="closeRejectModal()">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="modal-info-card warning-card">
-                    <div class="info-row">
-                        <span class="info-label">Reference:</span>
-                        <span id="rejectReference" class="info-value"></span>
+              <tr>
+                <td><code class="ref-code">@r.RequestReference</code></td>
+                <td>
+                  <div class="hub-co-cell">
+                    <div class="hub-co-av">@coInitials</div>
+                    <div>
+                      <div class="hub-co-name">@r.Company?.CompanyName</div>
+                      <div class="hub-co-type">#@r.CompanyId</div>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Company:</span>
-                        <span id="rejectCompany" class="info-value"></span>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight:600;font-size:.8125rem;color:var(--text)">@r.RequestedBy</div>
+                  <div style="font-size:.75rem;color:var(--muted);margin-top:1px">
+                    <a href="mailto:@r.RequesterEmail" style="color:var(--cyan-deep);text-decoration:none">@r.RequesterEmail</a>
+                  </div>
+                </td>
+                <td style="text-align:center">
+                  <span class="credits-pill">@r.RequestedCredits.ToString("N0")</span>
+                </td>
+                <td style="text-align:right">
+                  @if (r.AmountToPay.HasValue) {
+                    <span class="amount-val">R @r.AmountToPay.Value.ToString("N2")</span>
+                  } else {
+                    <span style="color:var(--light);font-size:.8125rem">—</span>
+                  }
+                </td>
+                <td>
+                  @if (!string.IsNullOrEmpty(r.Reason)) {
+                    <div class="reason-clip" title="@r.Reason">
+                      @(r.Reason.Length > 45 ? r.Reason.Substring(0, 45) + "…" : r.Reason)
                     </div>
-                </div>
-                <form id="rejectForm" method="post" asp-action="RejectRequest">
-                    <input type="hidden" id="rejectRequestId" name="requestId" />
-                    <div class="form-group">
-                        <label class="form-label required" for="rejectNotes">Rejection Reason *</label>
-                        <textarea id="rejectNotes"
-                                  name="notes"
-                                  class="form-textarea"
-                                  rows="4"
-                                  placeholder="Please provide a reason for rejecting this request..."
-                                  required></textarea>
+                  } else {
+                    <span style="color:var(--light);font-size:.8125rem">—</span>
+                  }
+                </td>
+                <td>
+                  <div style="font-size:.8125rem;color:var(--text);font-weight:500">@r.RequestDate.ToString("dd MMM yyyy")</div>
+                  <div style="font-size:.75rem;color:var(--muted)">@r.RequestDate.ToString("HH:mm")</div>
+                </td>
+                <td>
+                  <span class="hub-badge @bc">
+                    <span class="hub-dot"></span>@r.Status
+                  </span>
+                  @if (r.ProcessedDate.HasValue) {
+                    <div style="font-size:.5625rem;color:var(--light);margin-top:2px;font-weight:500">
+                      by @r.ProcessedBy · @r.ProcessedDate.Value.ToString("dd MMM")
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeRejectModal()">Cancel</button>
-                <button type="button" class="btn-reject-confirm" onclick="submitReject()">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20" height="20">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Reject Request
-                </button>
-            </div>
+                  }
+                </td>
+                <td style="text-align:right">
+                  @if (r.Status == CreditRequestStatus.Pending) {
+                    <div style="display:flex;gap:6px;justify-content:flex-end">
+                      <button class="icon-btn approve"
+                              title="Approve"
+                              onclick="openApprove(@r.RequestId,'@r.RequestReference','@(r.Company?.CompanyName?.Replace("'","\'"))',@r.RequestedCredits)">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      </button>
+                      <button class="icon-btn reject"
+                              title="Reject"
+                              onclick="openReject(@r.RequestId,'@r.RequestReference','@(r.Company?.CompanyName?.Replace("'","\'"))')">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      </button>
+                    </div>
+                  } else {
+                    <span style="font-size:.75rem;color:var(--light);font-style:italic">No action</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ── Approve Modal ──────────────────────────────────────────── -->
+<div class="modal-bg" id="approveModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <div class="modal-icon approve">✅</div>
+        <div>
+          <div class="modal-title-text">Approve Credit Request</div>
+          <div class="modal-sub">Credits will be allocated immediately upon approval</div>
         </div>
+      </div>
+      <button class="modal-close" onclick="closeApprove()">×</button>
     </div>
+    <div class="modal-body">
+      <div class="modal-info-card">
+        <div class="mi-row"><span class="mi-label">Reference</span><span class="mi-val" id="a-ref">—</span></div>
+        <div class="mi-row"><span class="mi-label">Company</span><span class="mi-val" id="a-co">—</span></div>
+        <div class="mi-row"><span class="mi-label">Credits Requested</span><span class="mi-val credit" id="a-cr">—</span></div>
+      </div>
+      <form id="approveForm" method="post" asp-action="ApproveRequest">
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="a-id" name="requestId" />
+        <div style="margin-bottom:6px">
+          <label class="mf-label">Approval Notes <span style="color:var(--light);font-weight:400">(optional)</span></label>
+          <textarea id="approveNotes" name="notes" class="mf-input" rows="3"
+                    placeholder="Add any notes about this approval, credit terms, or payment reference…"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-foot">
+      <button class="mbtn mbtn-ghost" onclick="closeApprove()">Cancel</button>
+      <button class="mbtn mbtn-approve" onclick="document.getElementById('approveForm').submit()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+        Approve &amp; Allocate Credits
+      </button>
+    </div>
+  </div>
+</div>
 
-    <script>
-        function openApproveModal(requestId, reference, company, credits) {
-            document.getElementById('approveRequestId').value = requestId;
-            document.getElementById('approveReference').textContent = reference;
-            document.getElementById('approveCompany').textContent = company;
-            document.getElementById('approveCredits').textContent = credits.toLocaleString() + ' credits';
-            document.getElementById('approveModal').style.display = 'flex';
-        }
+<!-- ── Reject Modal ───────────────────────────────────────────── -->
+<div class="modal-bg" id="rejectModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <div class="modal-icon reject">✕</div>
+        <div>
+          <div class="modal-title-text">Reject Credit Request</div>
+          <div class="modal-sub">The client will not receive any credits</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeReject()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-info-card warn">
+        <div class="mi-row"><span class="mi-label">Reference</span><span class="mi-val" id="r-ref">—</span></div>
+        <div class="mi-row"><span class="mi-label">Company</span><span class="mi-val" id="r-co">—</span></div>
+      </div>
+      <form id="rejectForm" method="post" asp-action="RejectRequest">
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="r-id" name="requestId" />
+        <div style="margin-bottom:6px">
+          <label class="mf-label req">Rejection Reason</label>
+          <textarea id="rejectNotes" name="notes" class="mf-input" rows="3" required
+                    placeholder="Explain why this request is being rejected. The client may use this to resubmit a corrected request."></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-foot">
+      <button class="mbtn mbtn-ghost" onclick="closeReject()">Cancel</button>
+      <button class="mbtn mbtn-reject" onclick="submitReject()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        Reject Request
+      </button>
+    </div>
+  </div>
+</div>
 
-        function closeApproveModal() {
-            document.getElementById('approveModal').style.display = 'none';
-            document.getElementById('approveForm').reset();
-        }
+<script>
+function openApprove(id, ref, co, credits) {
+  document.getElementById('a-id').value  = id;
+  document.getElementById('a-ref').textContent = ref;
+  document.getElementById('a-co').textContent  = co;
+  document.getElementById('a-cr').textContent  = credits.toLocaleString() + ' credits';
+  document.getElementById('approveModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeApprove() {
+  document.getElementById('approveModal').classList.remove('open');
+  document.getElementById('approveForm').reset();
+  document.body.style.overflow = '';
+}
 
-        function submitApprove() {
-            document.getElementById('approveForm').submit();
-        }
+function openReject(id, ref, co) {
+  document.getElementById('r-id').value  = id;
+  document.getElementById('r-ref').textContent = ref;
+  document.getElementById('r-co').textContent  = co;
+  document.getElementById('rejectModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeReject() {
+  document.getElementById('rejectModal').classList.remove('open');
+  document.getElementById('rejectForm').reset();
+  document.body.style.overflow = '';
+}
+function submitReject() {
+  var notes = document.getElementById('rejectNotes').value.trim();
+  if (!notes) {
+    document.getElementById('rejectNotes').style.borderColor = 'var(--danger)';
+    document.getElementById('rejectNotes').focus();
+    return;
+  }
+  document.getElementById('rejectForm').submit();
+}
 
-        function openRejectModal(requestId, reference, company) {
-            document.getElementById('rejectRequestId').value = requestId;
-            document.getElementById('rejectReference').textContent = reference;
-            document.getElementById('rejectCompany').textContent = company;
-            document.getElementById('rejectModal').style.display = 'flex';
-        }
+// Close on backdrop click
+['approveModal','rejectModal'].forEach(function(id) {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) {
+      id === 'approveModal' ? closeApprove() : closeReject();
+    }
+  });
+});
 
-        function closeRejectModal() {
-            document.getElementById('rejectModal').style.display = 'none';
-            document.getElementById('rejectForm').reset();
-        }
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeApprove(); closeReject(); }
+});
 
-        function submitReject() {
-            const notes = document.getElementById('rejectNotes').value.trim();
-            if (!notes) {
-                alert('Please provide a reason for rejection');
-                return;
-            }
-            document.getElementById('rejectForm').submit();
-        }
-
-        // Close modals when clicking outside
-        window.onclick = function(event) {
-            const approveModal = document.getElementById('approveModal');
-            const rejectModal = document.getElementById('rejectModal');
-            if (event.target === approveModal) {
-                closeApproveModal();
-            }
-            if (event.target === rejectModal) {
-                closeRejectModal();
-            }
-        }
-    </script>
+// Auto-dismiss alerts
+setTimeout(function() {
+  document.querySelectorAll('.hub-alert').forEach(function(a) {
+    a.style.transition = 'opacity .3s'; a.style.opacity = '0';
+    setTimeout(function() { a.remove(); }, 300);
+  });
+}, 5000);
+</script>
 </body>
 </html>

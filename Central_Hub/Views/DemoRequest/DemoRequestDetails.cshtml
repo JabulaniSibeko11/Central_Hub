@@ -1,315 +1,393 @@
 ﻿@model Central_Hub.Models.DemoRequest
+@using Central_Hub.Models
 @{
-    ViewData["Title"] = "Demo Request Details";
+    ViewData["Title"] = $"Demo Request — {Model.CompanyName}";
     Layout = null;
-}
+    var adminName = User.Identity?.Name ?? "Admin";
+    var initials  = string.Concat(adminName.Split(' ').Take(2).Select(w => w.FirstOrDefault())).ToUpper();
+    if (string.IsNullOrEmpty(initials)) initials = "CA";
 
+    string BadgeCls(DemoRequestStatus s) => s switch {
+        DemoRequestStatus.Pending       => "pending",
+        DemoRequestStatus.Scheduled     => "scheduled",
+        DemoRequestStatus.Completed     => "completed",
+        DemoRequestStatus.Converted     => "converted",
+        DemoRequestStatus.NotInterested => "not-interested",
+        DemoRequestStatus.Cancelled     => "not-interested",
+        _                               => "pending"
+    };
+    var coInitials = string.Concat((Model.CompanyName??"??").Split(' ').Take(2).Select(w=>w.FirstOrDefault())).ToUpper();
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"]</title>
-    
-    <!-- Include Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <link href="~/css/managedemocss.css" rel="stylesheet" />
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>@ViewData["Title"]</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="~/css/hubcss.css" rel="stylesheet">
+    <link href="~/css/demorequestdetailscss1.css" rel="stylesheet" />
 </head>
 <body>
 
-<!-- Page Header -->
-<div class="page-header">
-    <div class="content-container">
-        <div class="breadcrumb">
-            <a href="@Url.Action("ManageDemoRequests")">← Back to Demo Requests</a>
-        </div>
-        <h1>Demo Request Details</h1>
+<!-- Navbar -->
+<nav class="hub-nav">
+  <div class="hub-nav-inner">
+    <a href="@Url.Action("Index","Home")" class="hub-brand">
+      <img src="~/images/declarify logo.png" alt="Declarify" class="hub-brand-img" />
+      <div><div class="hub-brand-text">Declar<span>ify</span></div><div class="hub-brand-sub">Central Hub</div></div>
+    </a>
+    <div class="hub-nav-links" style="margin-left:20px">
+      <a href="@Url.Action("Index","Home")" class="hub-nav-link">Dashboard</a>
+      <a href="@Url.Action("Index","ClientCompany")" class="hub-nav-link">Clients</a>
+      <a href="@Url.Action("ManageDemoRequest","DemoRequest")" class="hub-nav-link active">Demos</a>
     </div>
+    <div class="hub-nav-right">
+      <div class="hub-nav-user">
+        <div class="hub-nav-av">@initials</div>
+        <div><div class="hub-nav-name">@adminName</div><div class="hub-nav-role">Central Admin</div></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hub-hero" style="padding-bottom:36px">
+  <div class="hub-hero-inner">
+    <div>
+      <div class="hub-hero-eyebrow">
+        <a href="@Url.Action("ManageDemoRequest","DemoRequest")" style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.6875rem;font-weight:700">
+          ← Demo Requests
+        </a>
+      </div>
+      <h1 class="hub-hero-title" style="margin-top:6px">@Model.CompanyName</h1>
+      <p class="hub-hero-desc" style="margin-bottom:0">Request #@Model.DemoRequestId · Received @Model.RequestDate.ToString("dd MMMM yyyy")</p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px">
+      <span class="hub-badge @BadgeCls(Model.Status)" style="font-size:.75rem;padding:6px 14px">
+        <span class="hub-dot"></span>@Model.Status
+      </span>
+      @if (Model.ConvertedToClient) {
+        <div class="hub-sec-bar" style="font-size:.6875rem">✓ Converted to Client</div>
+      }
+    </div>
+  </div>
 </div>
 
-<!-- Main Content -->
-<div class="content-container">
-    <!-- Success/Error Messages -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">
-            <span class="icon">✓</span>
-            <span>@TempData["SuccessMessage"]</span>
-        </div>
-    }
+<!-- Main -->
+<div class="hub-main">
 
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-error">
-            <span class="icon">⚠</span>
-            <span>@TempData["ErrorMessage"]</span>
-        </div>
-    }
+  @if (TempData["SuccessMessage"] != null) {
+    <div class="hub-alert success" style="margin-bottom:16px">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      @TempData["SuccessMessage"]
+    </div>
+  }
+  @if (TempData["ErrorMessage"] != null) {
+    <div class="hub-alert error" style="margin-bottom:16px">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      @TempData["ErrorMessage"]
+    </div>
+  }
 
-    <!-- Status Card -->
-    <div class="status-card">
-        <div class="status-header">
-            <div>
-                <h2>@Model.CompanyName</h2>
-                <p style="color: var(--color-text-muted); margin: 0;">Request ID: #@Model.DemoRequestId</p>
+  <div class="hub-g2" style="align-items:start">
+
+    <!-- LEFT: All details -->
+    <div style="display:flex;flex-direction:column;gap:18px">
+
+      <!-- Company info -->
+      <div class="hub-card hub-anim">
+        <div class="hub-card-head">
+          <div class="hub-card-icon navy">🏢</div>
+          <div><div class="hub-card-title">Organisation Information</div></div>
+        </div>
+        <div class="hub-card-body">
+          <div class="detail-grid">
+            <div class="detail-item" style="grid-column:1/-1">
+              <div class="detail-label">Company Name</div>
+              <div class="detail-value primary" style="font-size:1rem">@Model.CompanyName</div>
             </div>
-            <div>
-                @switch (Model.Status)
-                {
-                    case Central_Hub.Models.DemoRequestStatus.Pending:
-                        <span class="status-badge pending">
-                            <span class="icon">⏱</span>
-                            Pending
-                        </span>
-                        break;
-                    case Central_Hub.Models.DemoRequestStatus.Scheduled:
-                        <span class="status-badge scheduled">
-                            <span class="icon">📅</span>
-                            Scheduled
-                        </span>
-                        break;
-                    case Central_Hub.Models.DemoRequestStatus.Completed:
-                        <span class="status-badge completed">
-                            <span class="icon">✓</span>
-                            Completed
-                        </span>
-                        break;
-                    case Central_Hub.Models.DemoRequestStatus.Converted:
-                        <span class="status-badge converted">
-                            <span class="icon">⭐</span>
-                            Converted
-                        </span>
-                        break;
-                    case Central_Hub.Models.DemoRequestStatus.NotInterested:
-                        <span class="status-badge not-interested">
-                            <span class="icon">✕</span>
-                            Not Interested
-                        </span>
-                        break;
-                }
+            <div class="detail-item">
+              <div class="detail-label">Registration Number</div>
+              <div class="detail-value">@(Model.RegistrationNumber ?? "—")</div>
             </div>
+            <div class="detail-item">
+              <div class="detail-label">Organisation Type</div>
+              <div class="detail-value">@Model.OrganizationType</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Email Domain</div>
+              <div class="detail-value"><code style="background:var(--canvas);padding:2px 7px;border-radius:5px;font-size:.8125rem">@(Model.OrganizationEmailDomain ?? "—")</code></div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Province</div>
+              <div class="detail-value">📍 @(Model.Province ?? "—")</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Estimated Employees</div>
+              <div class="detail-value">@(Model.EstimatedEmployeeCount.HasValue ? Model.EstimatedEmployeeCount.Value.ToString("N0") + " employees" : "Not provided")</div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            @if (!Model.ConvertedToClient)
-            {
-                <button onclick="openStatusModal()" class="btn-primary-custom">
-                    Update Status
+      <!-- Contact person -->
+      <div class="hub-card hub-anim">
+        <div class="hub-card-head">
+          <div class="hub-card-icon cyan">👤</div>
+          <div><div class="hub-card-title">Contact Person</div></div>
+          <div class="hub-card-action">
+            <a href="mailto:@Model.Email" class="hub-btn hub-btn-primary hub-btn-xs">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75"/></svg>
+              Email
+            </a>
+          </div>
+        </div>
+        <div class="hub-card-body">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Full Name</div>
+              <div class="detail-value primary">@Model.ContactPersonName</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Job Title</div>
+              <div class="detail-value">@(string.IsNullOrWhiteSpace(Model.JobTitle) ? "—" : Model.JobTitle)</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Email Address</div>
+              <div class="detail-value"><a href="mailto:@Model.Email">@Model.Email</a></div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Phone Number</div>
+              <div class="detail-value"><a href="tel:@Model.PhoneNumber">@Model.PhoneNumber</a></div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Department)) {
+              <div class="detail-item">
+                <div class="detail-label">Department</div>
+                <div class="detail-value">@Model.Department</div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Request preferences -->
+      <div class="hub-card hub-anim">
+        <div class="hub-card-head">
+          <div class="hub-card-icon amber">📅</div>
+          <div><div class="hub-card-title">Demo Preferences</div></div>
+        </div>
+        <div class="hub-card-body">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="detail-label">Request Date</div>
+              <div class="detail-value">@Model.RequestDate.ToString("dddd, dd MMMM yyyy")</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Preferred Date</div>
+              <div class="detail-value">@(Model.PreferredDemoDate.HasValue ? Model.PreferredDemoDate.Value.ToString("dd MMMM yyyy") : "Not specified")</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Preferred Time</div>
+              <div class="detail-value">@(string.IsNullOrWhiteSpace(Model.PreferredTime) ? "Any time" : Model.PreferredTime)</div>
+            </div>
+            @if (Model.DemoScheduledDate.HasValue) {
+              <div class="detail-item">
+                <div class="detail-label">Scheduled Date</div>
+                <div class="detail-value" style="color:var(--cyan-deep);font-weight:700">📅 @Model.DemoScheduledDate.Value.ToString("dd MMMM yyyy")</div>
+              </div>
+            }
+            @if (Model.DemoCompletedDate.HasValue) {
+              <div class="detail-item">
+                <div class="detail-label">Completed Date</div>
+                <div class="detail-value" style="color:var(--success);font-weight:700">✅ @Model.DemoCompletedDate.Value.ToString("dd MMMM yyyy")</div>
+              </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.HearAboutUs)) {
+              <div class="detail-item">
+                <div class="detail-label">How They Found Us</div>
+                <div class="detail-value">@Model.HearAboutUs</div>
+              </div>
+            }
+          </div>
+          @if (!string.IsNullOrWhiteSpace(Model.AdditionalInfo)) {
+            <div style="margin-top:14px">
+              <div class="detail-label" style="margin-bottom:8px">Additional Information</div>
+              <div class="notes-box">@Model.AdditionalInfo</div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Internal notes -->
+      @if (!string.IsNullOrWhiteSpace(Model.InternalNotes)) {
+        <div class="hub-card hub-anim">
+          <div class="hub-card-head">
+            <div class="hub-card-icon navy">📝</div>
+            <div><div class="hub-card-title">Internal Notes</div><div class="hub-card-sub">Visible to admins only</div></div>
+          </div>
+          <div class="hub-card-body">
+            <div class="notes-box">@Model.InternalNotes</div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- RIGHT: Actions panel -->
+    <div style="display:flex;flex-direction:column;gap:18px;position:sticky;top:82px">
+
+      <!-- Status card -->
+      <div class="hub-card hub-anim" style="overflow:visible">
+        <div class="hub-card-head">
+          <div class="hub-card-icon green">📊</div>
+          <div><div class="hub-card-title">Request Status</div></div>
+        </div>
+        <div class="hub-card-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <span class="hub-badge @BadgeCls(Model.Status)" style="font-size:.8125rem;padding:7px 14px">
+              <span class="hub-dot"></span>@Model.Status
+            </span>
+            @if (Model.ConvertedToClient) {
+              <span class="hub-sec-bar" style="font-size:.6875rem">✓ Client Created</span>
+            }
+          </div>
+
+          @if (!Model.ConvertedToClient) {
+            <button onclick="openStatusModal()" class="hub-btn hub-btn-primary" style="width:100%;justify-content:center;margin-bottom:10px;border-radius:10px">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+              Update Status
+            </button>
+            @if (Model.Status == DemoRequestStatus.Completed) {
+              <form method="post" action="@Url.Action("ConvertToClient", new { id = Model.DemoRequestId })">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="hub-btn hub-btn-cyan" style="width:100%;justify-content:center;border-radius:10px"
+                        onclick="return confirm('Convert @Model.CompanyName to a client? This will create a new client record.')">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Convert to Client
                 </button>
-                @if (Model.Status == Central_Hub.Models.DemoRequestStatus.Completed)
-                {
-                        <form method="post" action="@Url.Action("ConvertToClient", new { id = Model.DemoRequestId })" style="display:inline;">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn-primary-custom" @(Model.ConvertedToClient ? "disabled" : "")>
-                                Convert to Client
-                            </button>
-                        </form>
-
-                }
+              </form>
             }
-            else
-            {
-                <div class="alert alert-success" style="margin: 0; flex: 1;">
-                    <span class="icon">✓</span>
-                    <span>This demo request has been converted to a client</span>
-                </div>
-            }
+          } else {
+            <div class="hub-alert success" style="margin:0">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Converted to client on @(Model.ConversionDate?.ToString("dd MMM yyyy") ?? "—")
+            </div>
+          }
         </div>
+      </div>
 
-        <!-- Company Information -->
-        <h3>Company Information</h3>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Company Name</div>
-                <div class="info-value primary">@Model.CompanyName</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Registration Number</div>
-                <div class="info-value">@Model.RegistrationNumber</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Organization Type</div>
-                <div class="info-value">@Model.OrganizationType</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Province</div>
-                <div class="info-value">@Model.Province</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Email Domain</div>
-                <div class="info-value">@Model.OrganizationEmailDomain</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Estimated Employees</div>
-                <div class="info-value">@Model.EstimatedEmployeeCount</div>
-            </div>
+      <!-- Quick contact -->
+      <div class="hub-card hub-anim">
+        <div class="hub-card-head">
+          <div class="hub-card-icon cyan">📞</div>
+          <div><div class="hub-card-title">Quick Contact</div></div>
         </div>
-
-        <!-- Contact Information -->
-        <h3>Contact Person</h3>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Name</div>
-                <div class="info-value primary">@Model.ContactPersonName</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Job Title</div>
-                <div class="info-value">@Model.JobTitle</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Department</div>
-                <div class="info-value">@Model.Department</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Email</div>
-                <div class="info-value">
-                    <a href="mailto:@Model.Email">@Model.Email</a>
-                </div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Phone Number</div>
-                <div class="info-value">@Model.PhoneNumber</div>
-            </div>
+        <div class="hub-card-body" style="display:flex;flex-direction:column;gap:10px">
+          <a href="mailto:@Model.Email" class="hub-btn hub-btn-ghost" style="justify-content:center;border-radius:10px;width:100%">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91"/></svg>
+            Send Email
+          </a>
+          <a href="tel:@Model.PhoneNumber" class="hub-btn hub-btn-ghost" style="justify-content:center;border-radius:10px;width:100%">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+            Call @Model.ContactPersonName
+          </a>
         </div>
+      </div>
 
-        <!-- Request Details -->
-        <h3>Request Details</h3>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Request Date</div>
-                <div class="info-value">@Model.RequestDate.ToString("dddd, dd MMMM yyyy")</div>
-            </div>
-            @if (Model.DemoScheduledDate.HasValue)
-            {
-                <div class="info-item">
-                    <div class="info-label">Demo Scheduled Date</div>
-                    <div class="info-value">@Model.DemoScheduledDate.Value.ToString("dddd, dd MMMM yyyy")</div>
-                </div>
-            }
-            @if (Model.DemoCompletedDate.HasValue)
-            {
-                <div class="info-item">
-                    <div class="info-label">Demo Completed Date</div>
-                    <div class="info-value">@Model.DemoCompletedDate.Value.ToString("dddd, dd MMMM yyyy")</div>
-                </div>
-            }
+      <!-- Request info mini card -->
+      <div class="hub-card hub-anim">
+        <div class="hub-card-head">
+          <div class="hub-card-icon navy">ℹ️</div>
+          <div><div class="hub-card-title">Request Info</div></div>
         </div>
-
-        <!-- Internal Notes -->
-        @if (!string.IsNullOrWhiteSpace(Model.InternalNotes))
-        {
-            <h3>Internal Notes</h3>
-            <div class="notes-section">
-                <p>@Model.InternalNotes</p>
+        <div class="hub-card-body" style="display:flex;flex-direction:column;gap:10px">
+          @foreach (var (lbl, val) in new[]{
+            ("Request ID", "#" + Model.DemoRequestId.ToString()),
+            ("Submitted", Model.RequestDate.ToString("dd MMM yyyy HH:mm")),
+            ("Org Type", Model.OrganizationType.ToString()),
+            ("Province", Model.Province ?? "—"),
+            ("Employees", Model.EstimatedEmployeeCount?.ToString("N0") ?? "—"),
+          }) {
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8125rem;padding:6px 0;border-bottom:1px solid var(--border)">
+              <span style="font-weight:600;color:var(--muted)">@lbl</span>
+              <span style="font-weight:700;color:var(--text)">@val</span>
             </div>
-        }
+          }
+        </div>
+      </div>
+
     </div>
+  </div>
 </div>
-    <div class="modal-overlay" id="statusModal">
-        <div class="modal-container">
-            <div class="modal-header">
-                <div>
-                    <h2>
-                        <span class="modal-icon">📝</span>
-                        Update Status
-                    </h2>
-                    <p>Change the status and add notes</p>
-                </div>
-                <button class="modal-close" onclick="closeStatusModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <form method="post" action="@Url.Action("UpdateDemoRequestStatus", new { id = Model.DemoRequestId })">
-                    @Html.AntiForgeryToken()
 
-                    <div class="form-group">
-                        <label class="form-label">
-                            <span class="label-icon">📊</span>
-                            Status
-                        </label>
-                        <select id="status" name="status" class="form-select-modern" required>
-                            <option value="">Select Status...</option>
-                            <option value="@Central_Hub.Models.DemoRequestStatus.Pending">⏱ Pending</option>
-                            <option value="@Central_Hub.Models.DemoRequestStatus.Scheduled">📅 Scheduled</option>
-                            <option value="@Central_Hub.Models.DemoRequestStatus.Completed">✓ Completed</option>
-                            <option value="@Central_Hub.Models.DemoRequestStatus.NotInterested">✕ Not Interested</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">
-                            <span class="label-icon">📌</span>
-                            Internal Notes <span class="optional">(Optional)</span>
-                        </label>
-                        <textarea id="notes" name="notes" class="form-textarea-modern" placeholder="Add any internal notes about this demo request...">@Model.InternalNotes</textarea>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button type="submit" class="btn-modal-primary">
-                            <span>💾</span>
-                            Update Status
-                        </button>
-                        <button type="button" onclick="closeStatusModal()" class="btn-modal-secondary">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
+<!-- Update Status Modal -->
+<div id="statusModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(8,27,56,.6);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:24px">
+  <div style="width:100%;max-width:480px;background:#fff;border-radius:20px;box-shadow:0 32px 80px rgba(0,0,0,.3);overflow:hidden;animation:modalIn .3s ease">
+ 
+    <!-- Modal header -->
+    <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to right,#F8FAFC,#fff)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:16px">📊</div>
+        <div>
+          <div style="font-family:var(--font-d);font-size:.9375rem;font-weight:800;color:var(--navy)">Update Status</div>
+          <div style="font-size:.6875rem;color:var(--muted);margin-top:1px">@Model.CompanyName</div>
         </div>
+      </div>
+      <button onclick="closeStatusModal()" style="background:none;border:none;cursor:pointer;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:18px;transition:all .15s">×</button>
     </div>
+    <!-- Modal body -->
+    <div style="padding:24px">
+      <form method="post" action="@Url.Action("UpdateDemoRequestStatus", new { id = Model.DemoRequestId })">
+        @Html.AntiForgeryToken()
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px">
+          <label style="font-size:.75rem;font-weight:700;color:var(--text)">New Status</label>
+                        <select asp-for="Status" name="status" required
+                                style="border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-size:.9375rem;font-family:var(--font-b);color:var(--text);outline:none;appearance:none;background:#fff;cursor:pointer">
 
-    <!-- Convert to Client Modal -->
-   
+                            <option value="">Choose status…</option>
+                            <option value="@DemoRequestStatus.Pending">⏳ Pending</option>
+                            <option value="@DemoRequestStatus.Scheduled">📅 Scheduled</option>
+                            <option value="@DemoRequestStatus.Completed">✅ Completed</option>
+                            <option value="@DemoRequestStatus.FollowUp">🔄 Follow-Up Required</option>
+                            <option value="@DemoRequestStatus.NotInterested">✕ Not Interested</option>
+                            <option value="@DemoRequestStatus.Cancelled">🚫 Cancelled</option>
+
+                        </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px">
+          <label style="font-size:.75rem;font-weight:700;color:var(--text)">Internal Notes <span style="color:var(--light);font-weight:400">(optional)</span></label>
+          <textarea name="notes" rows="4"
+                    style="border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-size:.875rem;font-family:var(--font-b);color:var(--text);outline:none;resize:vertical;line-height:1.6"
+                    placeholder="Add context, next steps, or follow-up notes…">@Model.InternalNotes</textarea>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button type="submit" class="hub-btn hub-btn-primary" style="flex:1;justify-content:center;border-radius:10px">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Save Changes
+          </button>
+          <button type="button" onclick="closeStatusModal()" class="hub-btn hub-btn-ghost" style="border-radius:10px">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <script>
-    function openStatusModal() {
-        document.getElementById('statusModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function openConvertModal() {
-        document.getElementById('convertModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeStatusModal() {
-        document.getElementById('statusModal').classList.remove('active');
-        document.body.style.overflow = 'auto';
-    }
-
-     function closeconvertModal() {
-        document.getElementById('convertModal').classList.remove('active');
-        document.body.style.overflow = 'auto';
-    }
-         // Handle form submission with loading state
-        document.getElementById('convertForm')?.addEventListener('submit', function(e) {
-            const btn = document.getElementById('convertBtn');
-            const btnText = document.getElementById('btnText');
-
-            btn.disabled = true;
-            btn.classList.add('loading');
-            btnText.textContent = 'Converting...';
-        });
-
-    // Close modal when clicking outside
-    document.getElementById('statusModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeStatusModal();
-        }
-    });
-
-    document.getElementById('convertModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeconvertModal();
-        }
-    });
-
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeStatusModal();
-        }
-    });
+function openStatusModal(){
+  var m=document.getElementById('statusModal');
+  m.style.display='flex';
+  document.body.style.overflow='hidden';
+}
+function closeStatusModal(){
+  document.getElementById('statusModal').style.display='none';
+  document.body.style.overflow='';
+}
+document.getElementById('statusModal').addEventListener('click',function(e){
+  if(e.target===this) closeStatusModal();
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape') closeStatusModal();
+});
+setTimeout(function(){document.querySelectorAll('.hub-alert').forEach(function(a){a.style.transition='opacity .3s';a.style.opacity='0';setTimeout(function(){a.remove()},300)})},5000);
 </script>
 </body>
 </html>

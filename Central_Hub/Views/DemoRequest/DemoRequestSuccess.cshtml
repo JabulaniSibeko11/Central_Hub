@@ -1,53 +1,138 @@
 ﻿@{
-    ViewData["Title"] = "Demo Request Submitted";
+    ViewData["Title"] = "Demo Request Submitted — Declarify";
+    Layout = null;
 }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>@ViewData["Title"]</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="~/css/demosuccesscss.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="bg">
+        <div class="glow1"></div><div class="glow2"></div>
+        <div class="rh rh1"></div><div class="rh rh2"></div><div class="rh rh3"></div>
 
-<div style="text-align: center; padding: 80px 0;">
-    <div style="max-width: 600px; margin: 0 auto;">
-        <div style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--color-accent), var(--color-accent-glow)); border-radius: 50%; display: flex; align-items: center; justify-center; margin: 0 auto 32px; box-shadow: 0 8px 30px rgba(0, 194, 203, 0.3);">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
+        <div class="card">
+            <!-- Animated check ring -->
+            <div class="check-wrap">
+                <div class="check-ring">
+                    <svg class="check-ring-svg" viewBox="0 0 100 100">
+                        <defs>
+                            <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stop-color="#00C2CB" />
+                                <stop offset="100%" stop-color="#00E5FF" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="cr-track" cx="50" cy="50" r="45" />
+                        <circle class="cr-fill" cx="50" cy="50" r="45" />
+                    </svg>
+                    <div class="check-icon">
+                        <div class="check-circle">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Brand -->
+                <div class="brand">
+                    <img src="~/images/declarify logo.png" alt="Declarify" class="brand-img" />
+                    <div class="brand-text">Declar<span>ify</span></div>
+                </div>
+
+                <!-- Status tag -->
+                <div class="success-eyebrow"><span></span> Request Received</div>
+
+                <!-- Headline -->
+                <div class="card-title">You're All Set!<br><span>We'll Be in Touch Soon.</span></div>
+                <p class="card-desc">
+                    Thank you for your interest in Declarify. Our compliance specialists have received your demo request and will reach out within
+                    <strong>1 business day</strong> to schedule your personalised walkthrough.
+                </p>
+
+                <!-- Timeline pills -->
+                <div class="timeline">
+                    <div class="tl-item">
+                        <div class="tl-icon">📧</div>
+                        <div class="tl-label">Confirmation</div>
+                        <div class="tl-val">Within <span>2hrs</span></div>
+                    </div>
+                    <div class="tl-item">
+                        <div class="tl-icon">📞</div>
+                        <div class="tl-label">Our Call</div>
+                        <div class="tl-val">Within <span>1 day</span></div>
+                    </div>
+                    <div class="tl-item">
+                        <div class="tl-icon">🚀</div>
+                        <div class="tl-label">Your Demo</div>
+                        <div class="tl-val"><span>30min</span> live</div>
+                    </div>
+                </div>
+
+                <!-- Next steps -->
+                <div class="next-steps">
+                    <div class="ns-title"><span>📋</span> What Happens Next</div>
+                    <div class="ns-list">
+                        <div class="ns-item">
+                            <div class="ns-num">1</div>
+                            <div class="ns-text">
+                                <strong>Confirmation email sent</strong>
+                                Check your inbox for a reference number and summary of your request.
+                            </div>
+                        </div>
+                        <div class="ns-item">
+                            <div class="ns-num">2</div>
+                            <div class="ns-text">
+                                <strong>A specialist reaches out</strong>
+                                Our team will contact you to confirm availability and tailor the demo to your organisation.
+                            </div>
+                        </div>
+                        <div class="ns-item">
+                            <div class="ns-num">3</div>
+                            <div class="ns-text">
+                                <strong>Calendar invite with all details</strong>
+                                You'll receive a meeting link, agenda, and pre-reading so you get maximum value from the session.
+                            </div>
+                        </div>
+                        <div class="ns-item">
+                            <div class="ns-num">4</div>
+                            <div class="ns-text">
+                                <strong>30-minute live walkthrough</strong>
+                                See Declarify configured for your organisation — bulk requests, compliance dashboard, review workflow, and security briefing.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CTAs -->
+                <div class="actions">
+                    <a href="@Url.Action("LandingPage", "Home")" class="btn-home">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" /></svg>
+                        Back to Declarify
+                    </a>
+                    <a href="@Url.Action("LandingPage", "Home")#features" class="btn-ghost">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Explore Features
+                    </a>
+                </div>
+
+                <!-- Contact note -->
+                <div class="contact-note">
+                    Questions? Email us at
+                    <a href="mailto:sales@declarify.co.za">sales@declarify.co.za</a>
+                    or call <a href="tel:+27110000000">+27 11 000 0000</a>
+                </div>
+            </div>
         </div>
-
-        <h1 style="color: var(--color-primary); margin-bottom: 24px;">
-            Demo Request Submitted!
-        </h1>
-
-        <p style="font-size: 1.125rem; color: var(--color-text-muted); line-height: 1.8; margin-bottom: 32px;">
-            Thank you for your interest in Declarify. We've received your demo request and our team will contact you within <strong>24 hours</strong> to schedule your personalized demonstration.
-        </p>
-
-        <div class="card" style="text-align: left; margin-bottom: 32px;">
-            <h3 style="color: var(--color-primary); margin-bottom: 16px;">What Happens Next?</h3>
-            <ul style="list-style: none; padding: 0;">
-                <li style="padding: 12px 0; border-bottom: 1px solid #E2E8F0;">
-                    <strong style="color: var(--color-accent);">1.</strong>
-                    <span style="margin-left: 12px;">A member of our team will reach out to confirm your demo</span>
-                </li>
-                <li style="padding: 12px 0; border-bottom: 1px solid #E2E8F0;">
-                    <strong style="color: var(--color-accent);">2.</strong>
-                    <span style="margin-left: 12px;">We'll schedule a time that works best for you</span>
-                </li>
-                <li style="padding: 12px 0; border-bottom: 1px solid #E2E8F0;">
-                    <strong style="color: var(--color-accent);">3.</strong>
-                    <span style="margin-left: 12px;">You'll receive a meeting invitation with all the details</span>
-                </li>
-                <li style="padding: 12px 0;">
-                    <strong style="color: var(--color-accent);">4.</strong>
-                    <span style="margin-left: 12px;">During the demo, we'll show you how Declarify works for your organization</span>
-                </li>
-            </ul>
-        </div>
-
-        <div style="margin-top: 40px;">
-            <a href="/" class="btn btn-primary btn-lg">
-                Return to Home
-            </a>
-        </div>
-
-        <p style="margin-top: 32px; font-size: 0.9rem; color: var(--color-text-muted);">
-            Questions? Email us at <a href="mailto:sales@declarify.co.za" style="color: var(--color-accent); text-decoration: none;">sales@declarify.co.za</a>
-        </p>
     </div>
-</div>
+</body>
+</html>

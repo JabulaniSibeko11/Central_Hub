@@ -1,184 +1,268 @@
 ﻿@model IEnumerable<Central_Hub.Models.DemoRequest>
+@using Central_Hub.Models
 @{
-    ViewData["Title"] = "Manage Demo Requests";
+    ViewData["Title"] = "Demo Requests — Declarify Central Hub";
     Layout = null;
+    var all        = Model.ToList();
+    var pending    = all.Count(r => r.Status == DemoRequestStatus.Pending);
+    var scheduled  = all.Count(r => r.Status == DemoRequestStatus.Scheduled);
+    var completed  = all.Count(r => r.Status == DemoRequestStatus.Completed);
+    var converted  = all.Count(r => r.Status == DemoRequestStatus.Converted);
+    var notInt     = all.Count(r => r.Status == DemoRequestStatus.NotInterested || r.Status == DemoRequestStatus.Cancelled);
+    var selStatus  = ViewBag.SelectedStatus as string ?? "all";
+    var adminName  = User.Identity?.Name ?? "Admin";
+    var initials   = string.Concat(adminName.Split(' ').Take(2).Select(w => w.FirstOrDefault())).ToUpper();
+    if (string.IsNullOrEmpty(initials)) initials = "CA";
+
+    string BadgeCls(DemoRequestStatus s) => s switch {
+        DemoRequestStatus.Pending        => "pending",
+        DemoRequestStatus.Scheduled      => "scheduled",
+        DemoRequestStatus.Completed      => "completed",
+        DemoRequestStatus.Converted      => "converted",
+        DemoRequestStatus.NotInterested  => "not-interested",
+        DemoRequestStatus.Cancelled      => "not-interested",
+        _                                => "pending"
+    };
+    string BadgeIcon(DemoRequestStatus s) => s switch {
+        DemoRequestStatus.Pending       => "⏳",
+        DemoRequestStatus.Scheduled     => "📅",
+        DemoRequestStatus.Completed     => "✅",
+        DemoRequestStatus.Converted     => "⭐",
+        DemoRequestStatus.NotInterested => "✕",
+        DemoRequestStatus.Cancelled     => "✕",
+        _                               => "•"
+    };
 }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>@ViewData["Title"]</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="~/css/Hubcss.css" rel="stylesheet">
+</head>
+<body>
 
-<!-- Include Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Navbar -->
+<nav class="hub-nav">
+  <div class="hub-nav-inner">
+    <a href="@Url.Action("Index","Home")" class="hub-brand">
+      <img src="~/images/declarify logo.png" alt="Declarify" class="hub-brand-img" />
+      <div><div class="hub-brand-text">Declar<span>ify</span></div><div class="hub-brand-sub">Central Hub</div></div>
+    </a>
+    <span class="hub-env-badge prod" style="margin-left:8px">● Production</span>
+    <div class="hub-nav-links" style="margin-left:20px">
+      <a href="@Url.Action("Index","Home")" class="hub-nav-link">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75"/></svg>
+        Dashboard
+      </a>
+      <a href="@Url.Action("Index","ClientCompany")" class="hub-nav-link">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18"/></svg>
+        Clients
+      </a>
+      <a href="@Url.Action("ManageDemoRequest","DemoRequest")" class="hub-nav-link active">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/></svg>
+        Demos
+        @if (pending > 0) { <span style="background:var(--danger);color:#fff;font-size:.5rem;font-weight:800;padding:1px 5px;border-radius:99px;min-width:16px;text-align:center">@pending</span> }
+      </a>
+      <a href="@Url.Action("RequestedCredits","Home")" class="hub-nav-link">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5"/></svg>
+        Credits
+      </a>
+    </div>
+    <div class="hub-nav-right">
+      <a href="@Url.Action("RequestDemo","DemoRequest")" target="_blank" class="hub-btn hub-btn-cyan hub-btn-sm">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+        Public Form
+      </a>
+      <div class="hub-nav-user">
+        <div class="hub-nav-av">@initials</div>
+        <div><div class="hub-nav-name">@adminName</div><div class="hub-nav-role">Central Admin</div></div>
+      </div>
+    </div>
+  </div>
+</nav>
 
-
-<link href="~/css/demorequestdetailscss.css" rel="stylesheet" />
-<!-- Page Header -->
-<div class="page-header">
-    <div class="header-content">
-        <div>
-            <h1>Demo Requests</h1>
-            <p class="subtitle">Manage and track all demo requests</p>
-        </div>
-        <a href="@Url.Action("RequestDemo")" class="btn-primary-custom" target="_blank">
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            View Public Form
+<!-- Hero -->
+<div class="hub-hero">
+  <div class="hub-hero-inner">
+    <div>
+      <div class="hub-hero-eyebrow">📅 Pipeline Management</div>
+      <h1 class="hub-hero-title">Demo <span>Requests</span></h1>
+      <p class="hub-hero-desc">Track, manage, and convert all incoming demo requests. Monitor the pipeline from first contact to client onboarding.</p>
+      <div class="hub-hero-actions">
+        <a href="@Url.Action("RequestDemo","DemoRequest")" target="_blank" class="hub-btn hub-btn-cyan">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          View Public Form
         </a>
+                    <a href="@Url.Action("Index", "Home")" class="hub-btn hub-btn-cyan" style="color:#fff;border-color:rgba(255,255,255,.25)">← Dashboard</a>
+      </div>
     </div>
+    <div class="hub-hero-stat">
+      <div class="hub-hero-stat-val">@converted<span>/</span>@all.Count</div>
+      <div class="hub-hero-stat-lbl">Converted / Total</div>
+    </div>
+  </div>
 </div>
 
-<!-- Main Content -->
-<div class="content-container">
-    <!-- Statistics Cards -->
-    <div class="stats-grid">
-        <div class="stat-card total">
-            <div class="stat-number" style="color: var(--color-primary);">@Model.Count()</div>
-            <div class="stat-label">Total Requests</div>
-        </div>
-        <div class="stat-card pending">
-            <div class="stat-number" style="color: var(--color-warning);">@Model.Count(r => r.Status == Central_Hub.Models.DemoRequestStatus.Pending)</div>
-            <div class="stat-label">Pending</div>
-        </div>
-        <div class="stat-card scheduled">
-            <div class="stat-number" style="color: #3B82F6;">@Model.Count(r => r.Status == Central_Hub.Models.DemoRequestStatus.Scheduled)</div>
-            <div class="stat-label">Scheduled</div>
-        </div>
-        <div class="stat-card completed">
-            <div class="stat-number" style="color: var(--color-success);">@Model.Count(r => r.Status == Central_Hub.Models.DemoRequestStatus.Completed)</div>
-            <div class="stat-label">Completed</div>
-        </div>
-        <div class="stat-card converted">
-            <div class="stat-number" style="color: var(--color-accent);">@Model.Count(r => r.Status == Central_Hub.Models.DemoRequestStatus.Converted)</div>
-            <div class="stat-label">Converted</div>
-        </div>
+<!-- KPI Strip -->
+<div class="hub-kpi-strip">
+  <div class="hub-kpi-inner">
+    <div class="hub-kpi navy">
+      <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"/></svg></div>
+      <div><div class="hub-kpi-val">@all.Count</div><div class="hub-kpi-lbl">Total</div></div><div class="hub-kpi-accent"></div>
     </div>
-
-    <!-- Status Filter -->
-    <div class="filter-card">
-        <div class="filter-pills">
-            <a href="@Url.Action("ManageDemoRequests", new { status = "all" })"
-               class="filter-pill @(ViewBag.SelectedStatus == "all" ? "active" : "")">
-                All Requests
-            </a>
-            <a href="@Url.Action("ManageDemoRequests", new { status = "Pending" })"
-               class="filter-pill @(ViewBag.SelectedStatus == "Pending" ? "active" : "")">
-                Pending
-            </a>
-            <a href="@Url.Action("ManageDemoRequests", new { status = "Scheduled" })"
-               class="filter-pill @(ViewBag.SelectedStatus == "Scheduled" ? "active" : "")">
-                Scheduled
-            </a>
-            <a href="@Url.Action("ManageDemoRequests", new { status = "Completed" })"
-               class="filter-pill @(ViewBag.SelectedStatus == "Completed" ? "active" : "")">
-                Completed
-            </a>
-            <a href="@Url.Action("ManageDemoRequests", new { status = "Converted" })"
-               class="filter-pill @(ViewBag.SelectedStatus == "Converted" ? "active" : "")">
-                Converted
-            </a>
-        </div>
+    <div class="hub-kpi amber">
+      <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div><div class="hub-kpi-val">@pending</div><div class="hub-kpi-lbl">Pending</div></div><div class="hub-kpi-accent"></div>
     </div>
-
-    @if (Model.Any())
-    {
-        <div class="table-card">
-            <div class="table-responsive">
-                <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th>Company</th>
-                            <th>Contact Person</th>
-                            <th>Contact Details</th>
-                            <th>Organization</th>
-                            <th>Request Date</th>
-                            <th>Status</th>
-                            <th style="text-align: center;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var request in Model)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="company-name">@request.CompanyName</div>
-                                    <div class="company-location">@request.Province</div>
-                                </td>
-                                <td>
-                                    <div style="font-weight: 500;">@request.ContactPersonName</div>
-                                    <div style="font-size: 0.875rem; color: var(--color-text-muted); margin-top: 4px;">@request.JobTitle</div>
-                                </td>
-                                <td>
-                                    <a href="mailto:@request.Email" class="contact-email">
-                                        @request.Email
-                                    </a>
-                                    <div class="contact-phone">@request.PhoneNumber</div>
-                                </td>
-                                <td>@request.OrganizationType</td>
-                                <td>@request.RequestDate.ToString("dd MMM yyyy")</td>
-                                <td>
-                                    @switch (request.Status)
-                                    {
-                                        case Central_Hub.Models.DemoRequestStatus.Pending:
-                                            <span class="status-badge pending">
-                                                <span>⏱</span>
-                                                Pending
-                                            </span>
-                                            break;
-                                        case Central_Hub.Models.DemoRequestStatus.Scheduled:
-                                            <span class="status-badge scheduled">
-                                                <span>📅</span>
-                                                Scheduled
-                                            </span>
-                                            break;
-                                        case Central_Hub.Models.DemoRequestStatus.Completed:
-                                            <span class="status-badge completed">
-                                                <span>✓</span>
-                                                Completed
-                                            </span>
-                                            break;
-                                        case Central_Hub.Models.DemoRequestStatus.Converted:
-                                            <span class="status-badge converted">
-                                                <span>⭐</span>
-                                                Converted
-                                            </span>
-                                            break;
-                                        case Central_Hub.Models.DemoRequestStatus.NotInterested:
-                                            <span class="status-badge not-interested">
-                                                <span>✕</span>
-                                                Not Interested
-                                            </span>
-                                            break;
-                                        default:
-                                            <span class="status-badge pending">@request.Status</span>
-                                            break;
-                                    }
-                                </td>
-                                <td style="text-align: center;">
-                                    <a href="@Url.Action("DemoRequestDetails", new { id = request.DemoRequestId })"
-                                       class="btn-action">
-                                        View Details
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="empty-state">
-            <div class="empty-state-icon">📋</div>
-            <h3>No Demo Requests Found</h3>
-            <p>
-                @if (ViewBag.SelectedStatus != "all")
-                {
-                    <text>No demo requests with status "@ViewBag.SelectedStatus" at the moment. Try selecting a different filter.</text>
-                }
-                else
-                {
-                    <text>There are no demo requests yet. Share the demo request form with potential clients to get started.</text>
-                }
-            </p>
-        </div>
-    }
+    <div class="hub-kpi cyan">
+      <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25"/></svg></div>
+      <div><div class="hub-kpi-val">@scheduled</div><div class="hub-kpi-lbl">Scheduled</div></div><div class="hub-kpi-accent"></div>
+    </div>
+    <div class="hub-kpi green">
+      <div class="hub-kpi-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div><div class="hub-kpi-val">@completed</div><div class="hub-kpi-lbl">Completed</div></div><div class="hub-kpi-accent"></div>
+    </div>
+    <div class="hub-kpi" style="--accent-color:var(--cyan)">
+      <div class="hub-kpi-icon" style="background:rgba(0,194,203,.1);color:var(--cyan-deep)">⭐</div>
+      <div><div class="hub-kpi-val" style="color:var(--cyan-deep)">@converted</div><div class="hub-kpi-lbl">Converted</div></div>
+      <div class="hub-kpi-accent" style="background:var(--cyan)"></div>
+    </div>
+  </div>
 </div>
+
+<!-- Main -->
+<div class="hub-main">
+
+  @if (TempData["Success"] != null) {
+    <div class="hub-alert success" style="margin-bottom:16px">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>@TempData["Success"]
+    </div>
+  }
+
+  <div class="hub-card hub-anim">
+    <!-- Toolbar -->
+    <div class="hub-card-head" style="padding:12px 18px;flex-wrap:wrap;gap:12px">
+      <!-- Status pills -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1">
+        @foreach (var (label, status, count) in new[]{
+          ("All", "all", all.Count),
+          ("Pending", "Pending", pending),
+          ("Scheduled", "Scheduled", scheduled),
+          ("Completed", "Completed", completed),
+          ("Converted", "Converted", converted),
+          ("Not Interested", "NotInterested", notInt)
+        }) {
+     
+    var linkStyle = selStatus == status
+        ? "background:var(--navy);color:#fff;"
+        : "background:var(--canvas);color:var(--muted);border:1.5px solid var(--border);";
+
+    var badgeStyle = selStatus == status
+        ? "background:rgba(255,255,255,.2);color:#fff;"
+        : "background:var(--border);color:var(--muted);";
+
+
+<a href="@Url.Action("ManageDemoRequest", new { status })"
+   style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:50px;
+          font-size:.75rem;font-weight:700;text-decoration:none;transition:all .18s;@linkStyle">
+
+    @label
+
+    <span style="padding:1px 6px;border-radius:99px;font-size:.5625rem;font-weight:900;@badgeStyle">
+        @count
+    </span>
+
+</a>
+        }
+      </div>
+      <!-- Search -->
+      <div style="position:relative;flex-shrink:0;min-width:200px">
+        <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:#94A3B8;pointer-events:none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="demoSearch" class="hub-input"
+               style="padding-left:34px;border-radius:50px;font-size:.8125rem;width:100%"
+               placeholder="Search requests…" oninput="searchTable()" />
+      </div>
+    </div>
+
+    <!-- Table or empty -->
+    @if (!all.Any()) {
+      <div class="hub-empty">
+        <div class="hub-empty-icon">📋</div>
+        <div class="hub-empty-title">No Demo Requests Yet</div>
+        <div class="hub-empty-desc">Share the public request form to start receiving demo enquiries from potential clients.</div>
+        <a href="@Url.Action("RequestDemo","DemoRequest")" target="_blank" class="hub-btn hub-btn-primary" style="margin-top:12px">View Public Form →</a>
+      </div>
+    } else {
+      <div class="hub-table-wrap">
+        <table class="hub-table" id="demoTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Company</th>
+              <th>Contact</th>
+              <th>Email &amp; Phone</th>
+              <th>Type</th>
+              <th>Requested</th>
+              <th>Status</th>
+              <th style="text-align:right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var r in all) {
+              var bc = BadgeCls(r.Status);
+              <tr data-search="@((r.CompanyName + r.ContactPersonName + r.Email + r.Province).ToLower())">
+                <td style="color:var(--light);font-size:.75rem;font-weight:600">#@r.DemoRequestId</td>
+                <td>
+                  <div class="hub-co-cell">
+                    <div class="hub-co-av">@string.Concat((r.CompanyName??"??").Split(' ').Take(2).Select(w=>w.FirstOrDefault())).ToUpper()</div>
+                    <div>
+                      <div class="hub-co-name">@r.CompanyName</div>
+                      <div class="hub-co-type">📍 @r.Province</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight:600;font-size:.8125rem;color:var(--text)">@r.ContactPersonName</div>
+                  <div style="font-size:.75rem;color:var(--muted);margin-top:2px">@r.JobTitle</div>
+                </td>
+                <td>
+                  <a href="mailto:@r.Email" style="font-size:.8125rem;color:var(--cyan-deep);font-weight:600;text-decoration:none">@r.Email</a>
+                  <div style="font-size:.75rem;color:var(--muted);margin-top:2px">@r.PhoneNumber</div>
+                </td>
+                <td style="font-size:.8125rem;color:var(--muted);font-weight:500">@r.OrganizationType</td>
+                <td style="font-size:.8125rem;color:var(--muted);white-space:nowrap">@r.RequestDate.ToString("dd MMM yyyy")</td>
+                <td>
+                  <span class="hub-badge @bc">
+                    <span class="hub-dot"></span>
+                    @r.Status
+                  </span>
+                  @if (r.ConvertedToClient) {
+                    <div style="font-size:.5625rem;font-weight:700;color:var(--cyan-deep);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">✓ Client</div>
+                  }
+                </td>
+                <td style="text-align:right">
+                  <a href="@Url.Action("DemoRequestDetails", new { id = r.DemoRequestId })"
+                     class="hub-btn hub-btn-ghost hub-btn-xs">View →</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<script>
+function searchTable(){
+  var q = document.getElementById('demoSearch').value.toLowerCase();
+  document.querySelectorAll('#demoTable tbody tr').forEach(function(r){
+    r.style.display = !q || r.dataset.search.includes(q) ? '' : 'none';
+  });
+}
+setTimeout(function(){document.querySelectorAll('.hub-alert').forEach(function(a){a.style.transition='opacity .3s';a.style.opacity='0';setTimeout(function(){a.remove()},300)})},5000);
+</script>
+</body>
+</html>

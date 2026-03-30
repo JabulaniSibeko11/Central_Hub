@@ -1,86 +1,108 @@
-﻿@using Central_Hub.Models.ViewModels
-@model LoginViewModel
+﻿@model Central_Hub.Models.ViewModels.LoginViewModel
 @{
-    ViewData["Title"] = "Central Admin Login";
-    Layout = null;
+    Layout = null; ViewData["Title"] = "Sign In — Declarify Central Hub";
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] - Declarify Hub</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
- 
-    <link href="~/css/logincss.css" rel="stylesheet" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>@ViewData["Title"]</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+   
+    <link href="~/css/hubcss.css" rel="stylesheet" />
+    <link href="~/css/adminlogincss.css" rel="stylesheet" />
 </head>
 <body>
-    <div class="login-wrapper">
-        <div class="login-container">
-            <div class="logo-section">
-                <div class="logo-icon">🔐</div>
-                <h2>Central Command</h2>
-                <p class="subtitle">Administrator Access Portal</p>
+    <div class="lw">
+        <div class="lb">
+            <div class="lb-dot"></div>
+            <div class="lb-sh lb-sh1"></div><div class="lb-sh lb-sh2"></div><div class="lb-sh lb-sh3"></div>
+            <div>
+                <div class="lb-logo">
+                    <img src="~/images/declarify logo.png" alt="Declarify" />
+                    <div><div class="lb-logo-text">Declar<span>ify</span></div><div class="lb-logo-sub">Central Hub</div></div>
+                </div>
+                <h1 class="lb-h1">Command &amp; Control<em>Central.</em></h1>
+                <p class="lb-p">Manage all client licenses, credits, and compliance deployments from one secure operations centre.</p>
+                <div class="lb-feats">
+                    <div class="lb-feat"><div class="lb-feat-ic">🔐</div><div class="lb-feat-tx">HMAC-SHA256 signed API authentication</div></div>
+                    <div class="lb-feat"><div class="lb-feat-ic">🛡️</div><div class="lb-feat-tx">AES-256 encrypted data at rest</div></div>
+                    <div class="lb-feat"><div class="lb-feat-ic">📋</div><div class="lb-feat-tx">Full API audit trail + replay protection</div></div>
+                    <div class="lb-feat"><div class="lb-feat-ic">⚡</div><div class="lb-feat-tx">Real-time rate limiting per company</div></div>
+                </div>
             </div>
-
-            @if (!ViewData.ModelState.IsValid)
-            {
-                <div class="alert alert-danger">
-                    <span>⚠️</span>
-                    <span>@Html.ValidationSummary(false, "", new { @class = "text-danger" })</span>
-                </div>
-            }
-
-            @if (TempData["Error"] != null)
-            {
-                <div class="alert alert-danger">
-                    <span>⚠️</span>
-                    <span>@TempData["Error"]</span>
-                </div>
-            }
-
-            <form asp-action="AdminLogin" asp-controller="Home" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
-
-                <div class="form-group">
-                    <label asp-for="Email">Email Address</label>
-                    <input asp-for="Email" type="email" placeholder="admin@declarify.co.za" autocomplete="username" required />
-                    <span asp-validation-for="Email" class="validation-error"></span>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="Password">Password</label>
-                    <input asp-for="Password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
-                    <span asp-validation-for="Password" class="validation-error"></span>
-                </div>
-
-                <div class="remember-me">
-                    <input asp-for="RememberMe" type="checkbox" id="rememberMe" />
-                    <label for="rememberMe">Keep me signed in for 30 days</label>
-                </div>
-
-                <button type="submit" class="btn-login">
-                    <span>Access Dashboard</span>
-                    <span>→</span>
-                </button>
-
-                <div class="security-badge">
-                    <span>🔒</span>
-                    <span>Secured with enterprise-grade encryption</span>
-                </div>
-            </form>
+            <div class="lb-trust">
+                <div class="lb-trust-ic">🏛️</div>
+                <div><strong>South African Public Sector</strong><span>POPIA compliant · Government-grade security</span></div>
+            </div>
         </div>
 
-        <div class="footer-text">
-            <p>© 2025 Declarify Central Hub • <a href="#">Privacy Policy</a> • <a href="#">Support</a></p>
+        <div class="rp">
+            <div class="lc">
+                <div class="lc-head">
+                    <div class="lc-logo">
+                        <img src="~/images/declarify logo.png" alt="Declarify" />
+                        <div class="lc-logo-text">Declar<span>ify</span></div>
+                    </div>
+                    <div class="lc-title">Central Hub</div>
+                    <p class="lc-sub">Authorised personnel only</p>
+                </div>
+
+                <div class="lc-body">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="la err">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+                            @TempData["Error"]
+                        </div>
+                    }
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="la err">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+                            Invalid email or password.
+                        </div>
+                    }
+
+                    <form method="post" action="@Url.Action("AdminLogin","Home")" id="lf">
+                        @Html.AntiForgeryToken()
+                        <div class="lf">
+                            <label class="ll">Email Address</label>
+                            <div class="liw">
+                                <svg class="li-ic" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+                                <input type="email" name="Email" class="li" placeholder="admin@declarify.co.za" required autocomplete="email" />
+                            </div>
+                        </div>
+                        <div class="lf">
+                            <label class="ll">Password</label>
+                            <div class="liw">
+                                <svg class="li-ic" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+                                <input type="password" name="Password" id="pw" class="li" placeholder="Enter your password" required autocomplete="current-password" />
+                                <button type="button" class="ptog" onclick="document.getElementById('pw').type=document.getElementById('pw').type==='password'?'text':'password'" title="Toggle">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="lopt">
+                            <label class="lrem"><input type="checkbox" name="RememberMe" /> Remember me for 8 hours</label>
+                        </div>
+                        <button type="submit" class="lsub" id="lb2">
+                            <span>Sign In to Hub</span>
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+                            <div class="lspin"></div>
+                        </button>
+                    </form>
+
+                    <div class="lsec">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+                        AES-256 encrypted · HMAC-SHA256 API auth
+                    </div>
+                </div>
+                <div class="lc-foot"><a href="@Url.Action("LandingPage", "Home")">← Back to Declarify</a></div>
+            </div>
         </div>
     </div>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>document.getElementById('lf').addEventListener('submit',function(){var b=document.getElementById('lb2');b.classList.add('loading');b.disabled=true;});</script>
 </body>
 </html>

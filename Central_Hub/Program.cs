@@ -3,50 +3,63 @@ using Central_Hub.Filter;
 using Central_Hub.Infrastructure.Options;
 using Central_Hub.Services;
 using Central_Hub.Services.Email;
+using Central_Hub.Services.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-    throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// ── Database ───────────────────────────────────────────────
+var conn = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddDbContext<Central_HubDbContext>(options =>
-    options.UseSqlServer(connectionString));
-
-builder.Services.AddScoped<ILicenseService, LicenseService>();
-
+builder.Services.AddDbContext<Central_HubDbContext>(o => o.UseSqlServer(conn));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options =>
-    options.SignIn.RequireConfirmedAccount = true)
+// ── Identity ───────────────────────────────────────────────
+builder.Services.AddDefaultIdentity<IdentityUser>(o =>
+    o.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<Central_HubDbContext>();
 
-builder.Services.AddControllersWithViews();
-builder.Services.AddScoped<CompanyAuthFilter>();
+// ── Cookie auth for admin UI ───────────────────────────────
+builder.Services.AddAuthentication()
+    .AddCookie("CentralAdminScheme", o =>
+    {
+        o.Cookie.Name = "CentralAdminCookie";
+        o.LoginPath = "/Login";
+        o.AccessDeniedPath = "/Home/AccessDenied";
+        o.ExpireTimeSpan = TimeSpan.FromHours(8);
+        o.SlidingExpiration = true;
+        o.Cookie.HttpOnly = true;
+        o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        o.Cookie.SameSite = SameSiteMode.Strict;
+    });
 
+// ── Business services ──────────────────────────────────────
+builder.Services.AddScoped<ILicenseService, LicenseService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
-// ? ADD THIS BEFORE builder.Build() - This was your main issue!
-builder.Services.AddAuthentication()
-    .AddCookie("CentralAdminScheme", options =>
-    {
-        options.Cookie.Name = "CentralAdminCookie";  // ? Distinct cookie name (recommended)
-        options.LoginPath = "/Home/AdminLogin";
-        options.AccessDeniedPath = "/Home/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromDays(30);
-        options.SlidingExpiration = true;
-    });
+// ── Security services ──────────────────────────────────────
+builder.Services.AddSingleton<IAesEncryptionService, AesEncryptionService>();
+builder.Services.AddSingleton<IHmacSigningService, HmacSigningService>();
+builder.Services.AddSingleton<INonceCache, InMemoryNonceCache>();
+// Register the nonce cache as a hosted service so its timer runs
+builder.Services.AddHostedService(sp =>
+    (InMemoryNonceCache)sp.GetRequiredService<INonceCache>());
 
-var app = builder.Build();  // ? All services must be before this line
+// ── API filter ─────────────────────────────────────────────
+builder.Services.AddScoped<CompanyAuthFilter>();
 
-// Configure the HTTP request pipeline.
+// ── MVC + compression ──────────────────────────────────────
+builder.Services.AddControllersWithViews();
+builder.Services.AddResponseCompression();
+
+var app = builder.Build();
+
+// ── Pipeline ───────────────────────────────────────────────
 if (app.Environment.IsDevelopment())
-{
     app.UseMigrationsEndPoint();
-}
 else
 {
     app.UseExceptionHandler("/Home/Error");
@@ -55,16 +68,27 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+app.UseResponseCompression();
 app.UseRouting();
-
-app.UseAuthentication();  // ? Ensure this comes before UseAuthorization()
+app.UseAuthentication();
 app.UseAuthorization();
+
+// Security response headers
+app.Use(async (ctx, next) =>
+{
+    var h = ctx.Response.Headers;
+    h["X-Content-Type-Options"] = "nosniff";
+    h["X-Frame-Options"] = "DENY";
+    h["X-XSS-Protection"] = "1; mode=block";
+    h["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    h["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    h["Cache-Control"] = "no-store";
+    await next();
+});
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=LandingPage}/{id?}");
 
 app.MapRazorPages();
-
 app.Run();

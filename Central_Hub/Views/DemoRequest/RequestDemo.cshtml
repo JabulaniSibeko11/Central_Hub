@@ -1,273 +1,414 @@
 ﻿@model Central_Hub.Models.DemoRequest
 @{
-    ViewData["Title"] = "Request a Demo";
+    ViewData["Title"] = "Request a Demo — Declarify";
     Layout = null;
 }
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request a Demo - Declarify</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="~/css/dashboard.css" rel="stylesheet" />
-    <link href="~/css/requestdemo.css" rel="stylesheet" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>@ViewData["Title"]</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="~/css/requestdemocss.css" rel="stylesheet" />
 </head>
 <body>
-    <div class="demo-modal">
-        <!-- Modal Header -->
-        <div class="modal-header">
-            <div class="modal-header-content">
-                <h1 class="modal-title">
-                    Experience Declarify<br/>
-                    <span class="text-accent">Request Your Demo</span>
-                </h1>
-                <p class="modal-subtitle">
-                    See how Declarify can streamline your Declaration of Interest compliance process. 
-                    Our team will guide you through the platform and answer all your questions.
-                </p>
-            </div>
+<div class="page-wrap">
+
+  <!-- ── LEFT PANEL ────────────────────────────────────────── -->
+  <div class="left-panel">
+    <div class="rh rh1"></div><div class="rh rh2"></div>
+    <div class="rh rh3"></div><div class="rh rh4"></div>
+
+    <div class="lp-inner">
+      <!-- Brand -->
+      <div class="lp-brand">
+        <img src="~/images/declarify logo.png" alt="Declarify" class="lp-brand-img" />
+        <div>
+          <div class="lp-brand-text">Declar<span>ify</span></div>
+          <div class="lp-brand-sub">Compliance Platform</div>
         </div>
+      </div>
 
-        <!-- Modal Body -->
-        <div class="modal-body">
-            <div class="feature-highlight">
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <div class="feature-text">
-                    <strong>What to Expect</strong>
-                    <p>Our team will contact you within 24 hours to schedule your personalized demo and discuss how Declarify can meet your organization's specific needs.</p>
-                </div>
-            </div>
+      <div class="lp-eyebrow">🗓️ Free Personalised Demo</div>
+      <h1 class="lp-title">See Declarify<br><span>Live in Action</span></h1>
+      <p class="lp-desc">A 30-minute walkthrough tailored to your organisation's size, structure, and compliance requirements. No pressure. No commitment.</p>
 
-            <form asp-action="RequestDemo" method="post">
-                @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="alert-card warning" style="margin-bottom: 2rem;"></div>
-
-                <!-- Organization Information -->
-                <div class="section-header">
-                    <div class="section-icon">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                    </div>
-                    <h3 class="section-title">Organization Information</h3>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label asp-for="CompanyName" class="form-label">
-                            Company Name<span class="required">*</span>
-                        </label>
-                        <input asp-for="CompanyName" class="form-control" placeholder="e.g., City of Johannesburg" required />
-                        <span asp-validation-for="CompanyName" class="invalid-feedback"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label asp-for="RegistrationNumber" class="form-label">
-                            Registration Number<span class="required">*</span>
-                        </label>
-                        <input asp-for="RegistrationNumber" class="form-control" placeholder="e.g., 2000/123456/08" required />
-                        <span asp-validation-for="RegistrationNumber" class="invalid-feedback"></span>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label asp-for="OrganizationType" class="form-label">
-                            Organization Type<span class="required">*</span>
-                        </label>
-                        <select asp-for="OrganizationType" class="form-control" asp-items="Html.GetEnumSelectList<Central_Hub.Models.CompanyType>()" required>
-                            <option value="">Select Organization Type</option>
-                        </select>
-                        <span asp-validation-for="OrganizationType" class="invalid-feedback"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label asp-for="EstimatedEmployeeCount" class="form-label">
-                            Estimated Employee Count
-                        </label>
-                        <input asp-for="EstimatedEmployeeCount" type="number" class="form-control" placeholder="e.g., 500" min="1" />
-                        <span asp-validation-for="EstimatedEmployeeCount" class="invalid-feedback"></span>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label asp-for="OrganizationEmailDomain" class="form-label">
-                            Organization Email Domain<span class="required">*</span>
-                        </label>
-                        <input asp-for="OrganizationEmailDomain" class="form-control" placeholder="e.g., joburg.org.za" required />
-                        <span class="form-text">Enter your organization's email domain (without @@)</span>
-                        <span asp-validation-for="OrganizationEmailDomain" class="invalid-feedback"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label asp-for="Province" class="form-label">
-                            Province<span class="required">*</span>
-                        </label>
-                        <select asp-for="Province" class="form-control" required>
-                            <option value="">Select Province</option>
-                            <option value="Gauteng">Gauteng</option>
-                            <option value="Western Cape">Western Cape</option>
-                            <option value="KwaZulu-Natal">KwaZulu-Natal</option>
-                            <option value="Eastern Cape">Eastern Cape</option>
-                            <option value="Limpopo">Limpopo</option>
-                            <option value="Mpumalanga">Mpumalanga</option>
-                            <option value="North West">North West</option>
-                            <option value="Northern Cape">Northern Cape</option>
-                            <option value="Free State">Free State</option>
-                        </select>
-                        <span asp-validation-for="Province" class="invalid-feedback"></span>
-                    </div>
-                </div>
-
-                <!-- Contact Person -->
-                <div class="section-header">
-                    <div class="section-icon">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                    </div>
-                    <h3 class="section-title">Contact Person</h3>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label asp-for="ContactPersonName" class="form-label">
-                            Full Name<span class="required">*</span>
-                        </label>
-                        <input asp-for="ContactPersonName" class="form-control" placeholder="e.g., John Smith" required />
-                        <span asp-validation-for="ContactPersonName" class="invalid-feedback"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label asp-for="JobTitle" class="form-label">
-                            Job Title
-                        </label>
-                        <input asp-for="JobTitle" class="form-control" placeholder="e.g., Compliance Officer" />
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label asp-for="Email" class="form-label">
-                            Email Address<span class="required">*</span>
-                        </label>
-                        <input asp-for="Email" type="email" class="form-control" placeholder="your.email@domain.com" required />
-                        <span asp-validation-for="Email" class="invalid-feedback"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label asp-for="PhoneNumber" class="form-label">
-                            Phone Number<span class="required">*</span>
-                        </label>
-                        <input asp-for="PhoneNumber" type="tel" class="form-control" placeholder="+27 XX XXX XXXX" required />
-                        <span asp-validation-for="PhoneNumber" class="invalid-feedback"></span>
-                    </div>
-                </div>
-
-                <div class="form-row single">
-                    <div class="form-group">
-                        <label asp-for="Department" class="form-label">
-                            Department
-                        </label>
-                        <input asp-for="Department" class="form-control" placeholder="e.g., Human Resources" />
-                    </div>
-                </div>
-
-                <!-- Demo Preferences -->
-                <div class="section-header">
-                    <div class="section-icon">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                    </div>
-                    <h3 class="section-title">Demo Preferences (Optional)</h3>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label asp-for="PreferredDemoDate" class="form-label">
-                            Preferred Demo Date
-                        </label>
-                        <input asp-for="PreferredDemoDate" type="date" class="form-control" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
-                    </div>
-
-                    <div class="form-group">
-                        <label asp-for="PreferredTime" class="form-label">
-                            Preferred Time
-                        </label>
-                        <select asp-for="PreferredTime" class="form-control">
-                            <option value="">Select Time Slot</option>
-                            <option value="Morning (9:00 - 12:00)">Morning (9:00 - 12:00)</option>
-                            <option value="Afternoon (12:00 - 15:00)">Afternoon (12:00 - 15:00)</option>
-                            <option value="Late Afternoon (15:00 - 17:00)">Late Afternoon (15:00 - 17:00)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row single">
-                    <div class="form-group">
-                        <label asp-for="AdditionalInfo" class="form-label">
-                            Additional Information
-                        </label>
-                        <textarea asp-for="AdditionalInfo" class="form-control" rows="4" placeholder="Tell us about your specific needs, compliance challenges, or any questions you'd like addressed during the demo..."></textarea>
-                    </div>
-                </div>
-
-                <div class="form-row single">
-                    <div class="form-group">
-                        <label asp-for="HearAboutUs" class="form-label">
-                            How Did You Hear About Us?
-                        </label>
-                        <select asp-for="HearAboutUs" class="form-control">
-                            <option value="">Select an Option</option>
-                            <option value="Google Search">Google Search</option>
-                            <option value="Colleague Referral">Colleague Referral</option>
-                            <option value="Social Media">Social Media</option>
-                            <option value="Industry Event">Industry Event</option>
-                            <option value="Government Portal">Government Portal</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                </div>
-                <!-- MOVE THE SUBMIT BUTTON INSIDE THE FORM, just before closing </form> -->
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
-                            <path d="M22 2L11 13"></path>
-                            <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
-                        </svg>
-                        Submit Demo Request
-                    </button>
-                    <p class="footer-note">
-                        By submitting this form, you agree to be contacted by our team regarding your demo request.<br />
-                        We respect your privacy and will never share your information with third parties.
-                    </p>
-                </div>
-            </form>
-           
+      <div class="lp-items">
+        <div class="lp-item">
+          <div class="lp-item-num">1</div>
+          <div>
+            <div class="lp-item-title">Live Platform Walkthrough</div>
+            <div class="lp-item-desc">See every feature in action — bulk requests, real-time dashboard, review workflow, and PDF generation.</div>
+          </div>
         </div>
-
-        <!-- Modal Footer -->
-       
+        <div class="lp-item">
+          <div class="lp-item-num">2</div>
+          <div>
+            <div class="lp-item-title">Tailored to Your Organisation</div>
+            <div class="lp-item-desc">We configure the demo with your employee count, department structure, and DOI template requirements.</div>
+          </div>
+        </div>
+        <div class="lp-item">
+          <div class="lp-item-num">3</div>
+          <div>
+            <div class="lp-item-title">Security &amp; Compliance Review</div>
+            <div class="lp-item-desc">AES-256 encryption, POPIA compliance, and self-hosted deployment options explained by our specialists.</div>
+          </div>
+        </div>
+        <div class="lp-item">
+          <div class="lp-item-num">4</div>
+          <div>
+            <div class="lp-item-title">Credit Cost Estimate</div>
+            <div class="lp-item-desc">Walk away with a clear per-employee cost projection and an ROI comparison against your current process.</div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    @section Scripts {
-        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-        <script>
-            // Add form ID for submit button
-            document.querySelector('form').id = 'demoForm';
-        </script>
-    }
+    <div class="lp-bottom">
+      <div class="lp-trust">
+        <div class="lp-trust-icon">✅</div>
+        <div class="lp-trust-text">
+          <strong>Responds within 1 Business Day</strong>
+          <span>No spam · No hard sell · Cancel anytime</span>
+        </div>
+      </div>
+      <div class="lp-stats">
+        <div class="lp-stat"><div class="lp-stat-val"><span>95</span>%</div><div class="lp-stat-lbl">Compliance Rate</div></div>
+        <div class="lp-stat"><div class="lp-stat-val"><span>70</span>%</div><div class="lp-stat-lbl">Time Saved</div></div>
+        <div class="lp-stat"><div class="lp-stat-val"><span>30</span>m</div><div class="lp-stat-lbl">Demo Length</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT PANEL ───────────────────────────────────────── -->
+  <div class="right-panel">
+    <div class="rp-inner">
+      <a href="@Url.Action("LandingPage","Home")" class="back-link">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+        Back to Declarify
+      </a>
+
+      <!-- Progress indicator -->
+      <div class="progress-steps" id="progressSteps">
+        <div class="ps active" id="ps1">
+          <div class="ps-dot">1</div>
+          <div class="ps-label">Organisation</div>
+        </div>
+        <div class="ps-line" id="pl1"></div>
+        <div class="ps" id="ps2">
+          <div class="ps-dot">2</div>
+          <div class="ps-label">Contact</div>
+        </div>
+        <div class="ps-line" id="pl2"></div>
+        <div class="ps" id="ps3">
+          <div class="ps-dot">3</div>
+          <div class="ps-label">Preferences</div>
+        </div>
+      </div>
+
+      <!-- Form heading -->
+      <div class="form-head">
+        <div class="form-head-tag">📋 Demo Request Form</div>
+        <div class="form-head-title">Tell us about your organisation</div>
+        <div class="form-head-desc">All fields marked with <span style="color:var(--cyan-deep);font-weight:700">*</span> are required. Takes about 3 minutes to complete.</div>
+      </div>
+
+      @if (!ViewData.ModelState.IsValid) {
+        <div class="alert-error">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+          Please review the highlighted fields and try again.
+        </div>
+      }
+
+      <form asp-action="RequestDemo" method="post" id="demoForm" novalidate>
+        @Html.AntiForgeryToken()
+
+        <!-- ── SECTION 1: Organisation ──────────────────────── -->
+        <div class="form-section" id="section1">
+          <div class="form-section-head">
+            <div class="form-section-icon">🏢</div>
+            <div>
+              <div class="form-section-num">Step 1 of 3</div>
+              <div class="form-section-title">Organisation Information</div>
+            </div>
+          </div>
+
+          <div class="fg2" style="margin-bottom:16px">
+            <div class="field">
+              <label asp-for="CompanyName">Company Name <span class="req">*</span></label>
+              <div class="field-wrap">
+                <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15"/></svg>
+                <input asp-for="CompanyName" class="has-icon" placeholder="e.g. City of Johannesburg" />
+              </div>
+              <span asp-validation-for="CompanyName" class="field-error"></span>
+            </div>
+            <div class="field">
+              <label asp-for="RegistrationNumber">Registration Number <span class="req">*</span></label>
+              <div class="field-wrap">
+                <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                <input asp-for="RegistrationNumber" class="has-icon" placeholder="e.g. 2000/123456/08" />
+              </div>
+              <span asp-validation-for="RegistrationNumber" class="field-error"></span>
+            </div>
+          </div>
+
+          <div class="fg2" style="margin-bottom:16px">
+            <div class="field">
+              <label asp-for="OrganizationType">Organisation Type <span class="req">*</span></label>
+              <select asp-for="OrganizationType" asp-items="Html.GetEnumSelectList<Central_Hub.Models.CompanyType>()">
+                <option value="">Select type…</option>
+              </select>
+              <span asp-validation-for="OrganizationType" class="field-error"></span>
+            </div>
+            <div class="field">
+              <label asp-for="Province">Province <span class="req">*</span></label>
+              <select asp-for="Province">
+                <option value="">Select province…</option>
+                <option value="Gauteng">Gauteng</option>
+                <option value="Western Cape">Western Cape</option>
+                <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                <option value="Eastern Cape">Eastern Cape</option>
+                <option value="Limpopo">Limpopo</option>
+                <option value="Mpumalanga">Mpumalanga</option>
+                <option value="North West">North West</option>
+                <option value="Northern Cape">Northern Cape</option>
+                <option value="Free State">Free State</option>
+              </select>
+              <span asp-validation-for="Province" class="field-error"></span>
+            </div>
+          </div>
+
+          <div class="fg2">
+            <div class="field">
+              <label asp-for="OrganizationEmailDomain">Email Domain <span class="req">*</span></label>
+              <div class="field-wrap">
+                <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253"/></svg>
+                <input asp-for="OrganizationEmailDomain" class="has-icon" placeholder="declarify.org.za" />
+              </div>
+              <div class="field-hint">Without the @@— e.g. gov.za</div>
+              <span asp-validation-for="OrganizationEmailDomain" class="field-error"></span>
+            </div>
+            <div class="field">
+              <label asp-for="EstimatedEmployeeCount">Employee Count</label>
+              <div class="field-wrap">
+                <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+                <input asp-for="EstimatedEmployeeCount" type="number" class="has-icon" placeholder="e.g. 500" min="1" />
+              </div>
+              <div class="field-hint">Helps us tailor the demo to your scale</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 2: Contact Person ────────────────────── -->
+        <div class="form-section" id="section2">
+          <div class="form-section-head">
+            <div class="form-section-icon">👤</div>
+            <div>
+              <div class="form-section-num">Step 2 of 3</div>
+              <div class="form-section-title">Contact Person</div>
+            </div>
+          </div>
+
+          <div class="fg2" style="margin-bottom:16px">
+            <div class="field">
+              <label asp-for="ContactPersonName">Full Name <span class="req">*</span></label>
+              <div class="field-wrap">
+                <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                <input asp-for="ContactPersonName" class="has-icon" placeholder="e.g. Jane Sithole" />
+              </div>
+              <span asp-validation-for="ContactPersonName" class="field-error"></span>
+            </div>
+            <div class="field">
+              <label asp-for="JobTitle">Job Title</label>
+              <div class="field-wrap">
+                <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894"/></svg>
+                <input asp-for="JobTitle" class="has-icon" placeholder="e.g. Chief Compliance Officer" />
+              </div>
+            </div>
+          </div>
+
+          <div class="fg2" style="margin-bottom:16px">
+            <div class="field">
+              <label asp-for="Email">Email Address <span class="req">*</span></label>
+              <div class="field-wrap">
+                <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                <input asp-for="Email" type="email" class="has-icon" placeholder="jane@joburg.org.za" />
+              </div>
+              <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+            <div class="field">
+              <label asp-for="PhoneNumber">Phone Number <span class="req">*</span></label>
+              <div class="field-wrap">
+                <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+                <input asp-for="PhoneNumber" type="tel" class="has-icon" placeholder="+27 11 000 0000" />
+              </div>
+              <span asp-validation-for="PhoneNumber" class="field-error"></span>
+            </div>
+          </div>
+
+          <div class="fg1">
+            <div class="field">
+              <label asp-for="Department">Department</label>
+              <div class="field-wrap">
+                <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>
+                <input asp-for="Department" class="has-icon" placeholder="e.g. Human Resources" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 3: Preferences ────────────────────────── -->
+        <div class="form-section" id="section3">
+          <div class="form-section-head">
+            <div class="form-section-icon">📅</div>
+            <div>
+              <div class="form-section-num">Step 3 of 3 — Optional</div>
+              <div class="form-section-title">Demo Preferences</div>
+            </div>
+          </div>
+
+          <div class="fg2" style="margin-bottom:16px">
+            <div class="field">
+              <label asp-for="PreferredDemoDate">Preferred Date</label>
+              <div class="field-wrap">
+                <svg class="field-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+                <input asp-for="PreferredDemoDate" type="date" class="has-icon" min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
+              </div>
+            </div>
+            <div class="field">
+              <label asp-for="PreferredTime">Preferred Time</label>
+              <select asp-for="PreferredTime">
+                <option value="">Any time works</option>
+                <option value="Morning (9:00 - 12:00)">🌅 Morning (9:00 – 12:00)</option>
+                <option value="Afternoon (12:00 - 15:00)">☀️ Afternoon (12:00 – 15:00)</option>
+                <option value="Late Afternoon (15:00 - 17:00)">🌆 Late Afternoon (15:00 – 17:00)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fg1" style="margin-bottom:16px">
+            <div class="field">
+              <label asp-for="AdditionalInfo">Anything specific you'd like to cover?</label>
+              <textarea asp-for="AdditionalInfo" rows="4" placeholder="Tell us about your specific compliance challenges, number of employees, any questions about pricing or security, or topics you'd like the demo to focus on…" id="additionalInfo" maxlength="800"></textarea>
+              <div class="char-count"><span id="charCount">0</span>/800</div>
+            </div>
+          </div>
+
+          <div class="fg1">
+            <div class="field">
+              <label asp-for="HearAboutUs">How did you hear about Declarify?</label>
+              <select asp-for="HearAboutUs">
+                <option value="">Select an option</option>
+                <option value="Google Search">🔍 Google Search</option>
+                <option value="Colleague Referral">👥 Colleague Referral</option>
+                <option value="Social Media">📱 Social Media</option>
+                <option value="Industry Event">🎤 Industry Event / Conference</option>
+                <option value="Government Portal">🏛️ Government Portal</option>
+                <option value="Tender/Procurement">📋 Tender / Procurement Database</option>
+                <option value="Other">💬 Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SUBMIT ──────────────────────────────────────────── -->
+        <div class="submit-area">
+          <button type="submit" class="submit-btn" id="submitBtn">
+            <span>Submit Demo Request</span>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            <div class="submit-spinner"></div>
+          </button>
+
+          <div class="submit-note">
+            By submitting you agree to be contacted by our team. We respect your privacy
+            and will never share your information with third parties.
+            <br><a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a>
+          </div>
+
+          <div class="security-badges">
+            <div class="sec-badge">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+              POPIA Compliant
+            </div>
+            <div class="sec-badge">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+              Encrypted Submission
+            </div>
+            <div class="sec-badge">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Responds in &lt; 1 Business Day
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Progress steps — highlight based on scroll
+(function(){
+  var sections = ['section1','section2','section3'];
+  var steps    = ['ps1','ps2','ps3'];
+  var lines    = ['pl1','pl2'];
+
+  function getVisibleSection(){
+    var best = 0;
+    sections.forEach(function(id, i){
+      var el = document.getElementById(id);
+      if(!el) return;
+      var rect = el.getBoundingClientRect();
+      if(rect.top < window.innerHeight * .6) best = i;
+    });
+    return best;
+  }
+
+  function updateProgress(){
+    var active = getVisibleSection();
+    steps.forEach(function(id, i){
+      var el = document.getElementById(id);
+      if(!el) return;
+      el.classList.remove('active','done');
+      if(i < active) el.classList.add('done');
+      else if(i === active) el.classList.add('active');
+    });
+    lines.forEach(function(id, i){
+      var el = document.getElementById(id);
+      if(!el) return;
+      el.style.background = i < active ? 'var(--cyan)' : 'var(--border)';
+    });
+  }
+
+  window.addEventListener('scroll', updateProgress, {passive:true});
+  updateProgress();
+})();
+
+// Character counter
+var ta = document.getElementById('additionalInfo');
+var cc = document.getElementById('charCount');
+if(ta && cc){
+  ta.addEventListener('input', function(){
+    cc.textContent = ta.value.length;
+    cc.style.color = ta.value.length > 720 ? 'var(--danger)' : 'var(--light)';
+  });
+}
+
+// Submit loading state
+document.getElementById('demoForm').addEventListener('submit', function(){
+  var btn = document.getElementById('submitBtn');
+  btn.classList.add('loading'); btn.disabled = true;
+});
+
+// Scroll-reveal field focus feedback
+document.querySelectorAll('.field input, .field select, .field textarea').forEach(function(el){
+  el.addEventListener('focus', function(){
+    this.closest('.field').style.opacity = '1';
+  });
+});
+</script>
 </body>
 </html>
