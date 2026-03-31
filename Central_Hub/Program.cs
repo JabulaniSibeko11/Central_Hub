@@ -4,7 +4,9 @@ using Central_Hub.Infrastructure.Options;
 using Central_Hub.Services;
 using Central_Hub.Services.Email;
 using Central_Hub.Services.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +37,16 @@ builder.Services.AddAuthentication()
         o.Cookie.SameSite = SameSiteMode.Strict;
     });
 
+
+
+builder.Services.AddControllersWithViews(options =>
+{
+    var policy = new AuthorizationPolicyBuilder("CentralAdminScheme")
+        .RequireAuthenticatedUser()
+        .Build();
+
+    options.Filters.Add(new AuthorizeFilter(policy));
+});
 // ── Business services ──────────────────────────────────────
 builder.Services.AddScoped<ILicenseService, LicenseService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
@@ -88,7 +100,9 @@ app.Use(async (ctx, next) =>
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=LandingPage}/{id?}");
+    pattern: "{controller=Home}/{action=LandingPage}/{id?}",
+    defaults: new { controller = "Home" });
+
 
 app.MapRazorPages();
 app.Run();

@@ -22,6 +22,8 @@ namespace Central_Hub.Controllers
             _LS = LS;
             _email = email;
         }
+
+        [Route("Clients")]
         public async Task<IActionResult> Index(string searchTerm = "", string status = "all")
         {
             var query = _Db.ClientCompanies.Include(c => c.Administrator).AsQueryable();
@@ -43,6 +45,7 @@ namespace Central_Hub.Controllers
             return View(companies);
         }
         [HttpGet]
+        [Route("ClientDetails")]
         public async Task<IActionResult> Details(int id)
         {
             var company = await _Db.ClientCompanies
@@ -81,6 +84,7 @@ namespace Central_Hub.Controllers
 
 
         [HttpGet]
+        [Route("ClientDetails1")]
         public async Task<IActionResult> Details1(int id)
         {
 
@@ -125,6 +129,7 @@ namespace Central_Hub.Controllers
 
      
         [HttpGet]
+        [Route("CreateDemoCompany")]
         public IActionResult CreateFromDemo()
         {
             var company = new ClientCompany
@@ -164,6 +169,7 @@ namespace Central_Hub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Route("CreateDemoCompany")]
         public async Task<IActionResult> CreateFromDemo(CreateFromDemoViewModel model, CancellationToken ct)
         {
             var company = model.Company;
@@ -293,6 +299,7 @@ namespace Central_Hub.Controllers
 
 
         [HttpGet]
+        [Route("CreateClient")]
         public IActionResult Create()
         {
             return View(new ClientCompany());
@@ -301,6 +308,7 @@ namespace Central_Hub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Route("CreateClient")]
         public async Task<IActionResult> Create(ClientCompany company, CompanyAdministrator admin)
         {
 

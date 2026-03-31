@@ -26,8 +26,29 @@ namespace Central_Hub.Controllers
             _db = db;
             _logger = logger;
         }
+
+
+        [AllowAnonymous]
         public IActionResult LandingPage() { 
         return View();
+        }
+
+        [HttpGet]
+        public IActionResult Register()
+        {
+            var user = new Users
+            {
+                Email = "admin123@declarify.com",
+                FullName = "Admin Admin",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123@"),
+                IsActive = true,
+                CreatedAt = DateTime.Now
+            };
+
+            _db.CentralUser.Add(user);
+             _db.SaveChangesAsync();
+
+            return RedirectToAction("AdminLogin");
         }
 
         [HttpGet]
@@ -57,7 +78,7 @@ namespace Central_Hub.Controllers
             var adminUser = await _db.CentralUser
                 .FirstOrDefaultAsync(u => u.Email == model.Email && u.IsActive);
 
-            if (adminUser == null)
+            if (adminUser == null || !VerifyPassword(model.Password, adminUser.PasswordHash))
             {
                 ModelState.AddModelError(string.Empty, "Invalid email or password.");
                 return View(model);
@@ -127,6 +148,7 @@ namespace Central_Hub.Controllers
 
         //}
 
+        [Route("Dashboard")]
         public async Task<IActionResult> Index()
         {
             var userEmail = User.Identity.Name;
@@ -229,6 +251,7 @@ namespace Central_Hub.Controllers
             return View(model);
         }
 
+        [Route("Credits")]
         public async Task<IActionResult> RequestedCredits()
         {
 

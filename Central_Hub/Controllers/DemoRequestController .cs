@@ -1,6 +1,7 @@
 ﻿using Central_Hub.Data;
 using Central_Hub.Models;
 using Central_Hub.Services.Email;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,12 +27,15 @@ namespace Central_Hub.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
+        [Route("RequestDemo")]
         public IActionResult RequestDemo()
         {
             return View(new DemoRequest());
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RequestDemo(DemoRequest demoRequest, CancellationToken ct)
         {
@@ -198,12 +202,15 @@ namespace Central_Hub.Controllers
             }
         }
 
+        [AllowAnonymous]
+        [Route("RequestDemo")]
         public IActionResult DemoRequestSuccess()
         {
             return View();
         }
 
         [HttpGet]
+        [Route("Demos")]
         public async Task<IActionResult> ManageDemoRequest(string status = "all")
         {
             var query = _Db.DemoRequests.AsQueryable();
@@ -222,6 +229,7 @@ namespace Central_Hub.Controllers
         }
 
         [HttpGet]
+        [Route("DemoDetails")]
         public async Task<IActionResult> DemoRequestDetails(int id)
         {
             var request = await _Db.DemoRequests.FirstOrDefaultAsync(d => d.DemoRequestId == id);
