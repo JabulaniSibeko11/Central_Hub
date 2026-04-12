@@ -37,19 +37,29 @@ namespace Central_Hub.Controllers
         [AllowAnonymous]
         public IActionResult Register()
         {
-            var user = new Users
+            try
             {
-                Email = "admin123@declarify.com",
-                FullName = "Admin Admin",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123@"),
-                IsActive = true,
-                CreatedAt = DateTime.Now
-            };
+                var user = new Users
+                {
+                    Email = "admin123@declarify.com",
+                    FullName = "Admin Admin",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123@"),
+                    IsActive = true,
+                    CreatedAt = DateTime.Now
+                };
 
-            _db.CentralUser.Add(user);
-             _db.SaveChangesAsync();
+                _db.CentralUser.Add(user);
+                _db.SaveChangesAsync();
 
-            return RedirectToAction("AdminLogin");
+                return RedirectToAction("AdminLogin");
+
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+
+            
         }
 
         [HttpGet]

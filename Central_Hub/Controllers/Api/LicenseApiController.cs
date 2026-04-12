@@ -17,6 +17,7 @@ namespace Central_Hub.Controllers.Api
 
     [Route("api/core")]
     [ApiController]
+    [AllowAnonymous]
     [ServiceFilter(typeof(CompanyAuthFilter))]
     public class LicenseApiController : ControllerBase
     {
