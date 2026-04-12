@@ -34,6 +34,7 @@ namespace Central_Hub.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Register()
         {
             var user = new Users

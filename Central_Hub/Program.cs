@@ -39,14 +39,14 @@ builder.Services.AddAuthentication()
 
 
 
-builder.Services.AddControllersWithViews(options =>
-{
-    var policy = new AuthorizationPolicyBuilder("CentralAdminScheme")
-        .RequireAuthenticatedUser()
-        .Build();
+//builder.Services.AddControllersWithViews(options =>
+//{
+//    var policy = new AuthorizationPolicyBuilder("CentralAdminScheme")
+//        .RequireAuthenticatedUser()
+//        .Build();
 
-    options.Filters.Add(new AuthorizeFilter(policy));
-});
+//    options.Filters.Add(new AuthorizeFilter(policy));
+//});
 // ── Business services ──────────────────────────────────────
 builder.Services.AddScoped<ILicenseService, LicenseService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
