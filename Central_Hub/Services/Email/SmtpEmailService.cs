@@ -18,11 +18,11 @@ namespace Central_Hub.Services.Email
 
         public async Task<bool> SendAsync(string toEmail, string subject, string htmlBody, CancellationToken ct)
         {
-            if (!_opt.Enabled)
-            {
-                _log.LogInformation("Email disabled. Skipping send to {To}. Subject: {Subject}", toEmail, subject);
-                return false;
-            }
+            //if (!_opt.Enabled)
+            //{
+            //    _log.LogInformation("Email disabled. Skipping send to {To}. Subject: {Subject}", toEmail, subject);
+            //    return false;
+            //}
 
             var recipient = string.IsNullOrWhiteSpace(_opt.OverrideTo) ? toEmail : _opt.OverrideTo;
 

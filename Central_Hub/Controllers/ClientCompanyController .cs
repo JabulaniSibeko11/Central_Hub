@@ -3,9 +3,12 @@ using Central_Hub.Models;
 using Central_Hub.Models.ViewModels;
 using Central_Hub.Services;
 using Central_Hub.Services.Email;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using System.Net;
+using System.Net.Mail;
 using System.Security.Policy;
 using System.Text.RegularExpressions;
 
@@ -22,6 +25,68 @@ namespace Central_Hub.Controllers
             _LS = LS;
             _email = email;
         }
+
+        [AllowAnonymous]
+        public IActionResult SendEmail(CancellationToken ct)
+        {
+
+           // _email.SendAsync("tshetshe203@gmail.com", "Test1", "Hello", ct);
+
+            SendEmailMs("tshetshe203@gmail.com", "Test1", "Hello");
+
+
+            return View();
+        }
+
+        public bool SendEmailMs(string toEmail, string subject, string body)
+        {
+            try
+            {
+                // Bypass SSL cert validation 
+                ServicePointManager.ServerCertificateValidationCallback =
+                    (sender, certificate, chain, sslPolicyErrors) => true;
+
+                var fromAddress = new MailAddress("noreply@declarify.co.za", "Declarify");
+                var toAddress = new MailAddress(toEmail);
+
+                using var smtp = new SmtpClient
+                {
+                    Host = "mail.declarify.co.za",
+                    Port = 587,
+                    EnableSsl = true,                        
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    UseDefaultCredentials = false,
+                    Credentials = new NetworkCredential(
+                        "noreply@declarify.co.za",             
+                        "noreply1"           
+                    ),
+                    Timeout = 20000                           
+                };
+
+                using var message = new MailMessage(fromAddress, toAddress)
+                {
+                    Subject = subject,
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                smtp.Send(message);
+                return true;
+            }
+            catch (SmtpException ex)
+            {
+                // Log: ex.StatusCode + ex.Message
+                Console.WriteLine($"SMTP Error: {ex.StatusCode} - {ex.Message}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return false;
+            }
+        }
+
+
 
         [Route("Clients")]
         public async Task<IActionResult> Index(string searchTerm = "", string status = "all")
